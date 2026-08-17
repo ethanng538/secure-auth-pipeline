@@ -1,0 +1,41 @@
+# Defines isolated virtual routing zones to segment container communications.
+networks:
+  frontend-api:
+    driver: bridge
+  api-db:
+    driver: bridge
+
+services:
+  # Encapsulates the back-end relational data storage engine.
+  postgres-db:
+    image: postgres:18-alpine
+    container_name: secure_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    # Mounts local provisioning schema definitions directly to the container lifecycle path.
+    volumes:
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - api-db
+
+  # Encapsulates the primary application routing and transaction logic.
+  backend-api:
+    build: ./backend
+    container_name: secure_backend
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      DB_HOST: postgres-db
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      DB_PORT: 5432
+    networks:
+      - frontend-api
+      - api-db
+    depends_on:
+      - postgres-db
