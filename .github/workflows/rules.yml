@@ -46,8 +46,8 @@ rules:
 
       - metavariable-regex:
           metavariable: $SQL_STRING
-        # Broad case-insensitive behavioural check looking for queries touching critical tables
-        regex: '(?i).*(users|accounts|credentials|login|register).*'
+          # Broad case-insensitive behavioural check looking for queries touching critical tables
+          regex: '(?i).*(users|accounts|credentials|login|register).*'
 
     pattern-not-either:
       # Structure A: catches modular library object methods (e.g., bcrypt.hash)
