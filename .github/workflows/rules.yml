@@ -36,20 +36,20 @@ rules:
           # Broad case-insensitive behavioural check looking for queries touching critical tables
           regex: '(?i).*(users|accounts|credentials|login|register).*'
 
-      - pattern-not:
-          pattern-either:
-            # Structure A: catches modular library object methods (e.g., bcrypt.hash)
-            - pattern: |
-                const $HASH = await $CRYPTO.$METHOD($SECRET, ...);
-                ...
-                const $QUERY = ... + $HASH + ...;
-                ...
-                $POOL.query($QUERY);
+    pattern-not:
+      pattern-either:
+        # Structure A: catches modular library object methods (e.g., bcrypt.hash)
+        - pattern: |
+            const $HASH = await $CRYPTO.$METHOD($SECRET, ...);
+            ...
+            const $QUERY = ... + $HASH + ...;
+            ...
+            $POOL.query($QUERY);
 
-            # Structure B:cCatches standalone global function wraps (e.g., hash())
-            - pattern: |
-                const $HASH = await $METHOD($SECRET, ...);
-                ...
-                const $QUERY = ... + $HASH + ...;
-                ...
-                $POOL.query($QUERY);
+        # Structure B: catches standalone global function wraps (e.g., hash())
+        - pattern: |
+            const $HASH = await $METHOD($SECRET, ...);
+            ...
+            const $QUERY = ... + $HASH + ...;
+            ...
+            $POOL.query($QUERY);
