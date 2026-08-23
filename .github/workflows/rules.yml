@@ -33,11 +33,19 @@ rules:
       module before executing database storage actions.
     patterns:
       - pattern-either:
-          - pattern: $POOL.query($QUERY)
-          - pattern: $POOL.query($QUERY, ...)
+        - pattern: |
+            const $QUERY = $SQL_STRING;
+            ...
+            $POOL.query($QUERY);
+        - pattern: |
+            const $QUERY = $SQL_STRING;
+            ...
+            $POOL.query($QUERY, ...)
+        - pattern: $POOL.query($SQL_STRING)
+        - pattern: $POOL.query($SQL_STRING, ...)
 
-      - metavariable-regex:
-          metavariable: $QUERY
+        - metavariable-regex:
+            metavariable: $SQL_STRING
           # Broad case-insensitive behavioural check looking for queries touching critical tables
           regex: '(?i).*(users|accounts|credentials|login|register).*'
 
