@@ -5,9 +5,10 @@ rules:
     message: |
       🚨 APPSEC DETECTOR: Improper Neutralization of Special Elements used in an SQL Command (CWE-89)
       
-      The codebase constructs a database command by combining raw text string blocks 
-      directly with dynamic variables via '+' operators. An attacker can manipulate 
-      these inputs to achieve total authentication bypass or data exfiltration.
+      Plain English Advisory:
+      The codebase constructs a database query by combining raw text string blocks 
+      directly with dynamic variables via concatenation. An attacker can manipulate 
+      these inputs to achieve data exfiltration or modification.
       
       Remediation: Convert this routing logic to use parameterized queries ($1, $2).
     patterns:
@@ -18,20 +19,37 @@ rules:
               ...
               $POOL.query($QUERY);
 
-  - id: appsec-plaintext-password-storage
+  - id: appsec-high-unhashed-credential-storage
     languages: [javascript]
     severity: ERROR
     message: |
-      🚨 APPSEC DETECTOR: Plaintext Storage of a Password (CWE-256)
+      🚨 APPSEC DETECTOR: Insecure Dataflow - Unsanitised Storage (CWE-256)
       
-      The application layer is sending unhashed credential variables directly into 
-      relational storage tables. If our database server is ever compromised, every 
-      user password buffer will be exposed instantly in plaintext format.
       
-      Remediation: Pass incoming credential blocks through an irreversible hashing 
-      module before executing database storage actions.
+      The system detected a database transaction interacting with identity registries 
+      where user parameters are routed directly to persistent data components without 
+      passing through an approved cryptographic sanitisation transformation.
     patterns:
       - pattern: $POOL.query($QUERY, ...)
       - metavariable-regex:
           metavariable: $QUERY
-          regex: '(?i).*(password|pass).*'
+          # Broad case-insensitive behavioural check looking for queries touching critical tables
+          regex: '(?i).*(users|accounts|credentials|login|register).*'
+
+      - pattern-not:
+          pattern-either:
+            # Structure A: catches modular library object methods (e.g., bcrypt.hash)
+            - pattern: |
+                const $HASH = await $CRYPTO.$METHOD($SECRET, ...);
+                ...
+                const $QUERY = ... + $HASH + ...;
+                ...
+                $POOL.query($QUERY);
+
+            # Structure B:cCatches standalone global function wraps (e.g., hash())
+            - pattern: |
+                const $HASH = await $METHOD($SECRET, ...);
+                ...
+                const $QUERY = ... + $HASH + ...;
+                ...
+                $POOL.query($QUERY);
