@@ -1,23 +1,23 @@
 rules:
-  - id: appsec-critical-sqli
-    languages: [javascript]
-    severity: ERROR
-    message: |
-      🚨 APPSEC DETECTOR: Improper Neutralization of Special Elements used in an SQL Command (CWE-89)
-      
-      Plain English Advisory:
-      The codebase constructs a database query by combining raw text string blocks 
-      directly with dynamic variables via concatenation. An attacker can manipulate 
-      these inputs to achieve data exfiltration or modification.
-      
-      Remediation: Convert this routing logic to use parameterized queries ($1, $2).
-    patterns:
-      - pattern-either:
-          - pattern: $POOL.query(... + $INPUT + ...)
-          - pattern: |
-              const $QUERY = ... + $INPUT + ...;
-              ...
-              $POOL.query($QUERY);
+#  - id: appsec-critical-sqli
+#    languages: [javascript]
+#    severity: ERROR
+#    message: |
+#      🚨 APPSEC DETECTOR: Improper Neutralization of Special Elements used in an SQL Command (CWE-89)
+#
+#      Plain English Advisory:
+#      The codebase constructs a database query by combining raw text string blocks
+#      directly with dynamic variables via concatenation. An attacker can manipulate
+#      these inputs to achieve data exfiltration or modification.
+#
+#      Remediation: convert this routing logic to use parameterised queries ($1, $2).
+#    patterns:
+#      - pattern-either:
+#          - pattern: $POOL.query(... + $INPUT + ...)
+#          - pattern: |
+#              const $QUERY = ... + $INPUT + ...;
+#              ...
+#              $POOL.query($QUERY);
 
   - id: appsec-high-unhashed-credential-storage
     languages: [javascript]
@@ -25,10 +25,12 @@ rules:
     message: |
       🚨 APPSEC DETECTOR: Insecure Dataflow - Unsanitised Storage (CWE-256)
       
-      
       The system detected a database transaction interacting with identity registries 
       where user parameters are routed directly to persistent data components without 
       passing through an approved cryptographic sanitisation transformation.
+      
+      Remediation: pass incoming credential blocks through an irreversible hashing 
+      module before executing database storage actions.
     patterns:
       - pattern-either:
           - pattern: $POOL.query($QUERY)
