@@ -30,26 +30,28 @@ rules:
       where user parameters are routed directly to persistent data components without 
       passing through an approved cryptographic sanitisation transformation.
     patterns:
-      - pattern: $POOL.query($QUERY, ...)
+      - pattern-either:
+          - pattern: $POOL.query($QUERY)
+          - pattern: $POOL.query($QUERY, ...)
+
       - metavariable-regex:
           metavariable: $QUERY
           # Broad case-insensitive behavioural check looking for queries touching critical tables
           regex: '(?i).*(users|accounts|credentials|login|register).*'
 
-    pattern-not:
-      pattern-either:
-        # Structure A: catches modular library object methods (e.g., bcrypt.hash)
-        - pattern: |
-            const $HASH = await $CRYPTO.$METHOD($SECRET, ...);
-            ...
-            const $QUERY = ... + $HASH + ...;
-            ...
-            $POOL.query($QUERY);
+    pattern-not-either:
+      # Structure A: catches modular library object methods (e.g., bcrypt.hash)
+      - pattern: |
+          const $HASH = await $CRYPTO.$METHOD($SECRET, ...);
+          ...
+          const $QUERY = ... + $HASH + ...;
+          ...
+          $POOL.query($QUERY);
 
-        # Structure B: catches standalone global function wraps (e.g., hash())
-        - pattern: |
-            const $HASH = await $METHOD($SECRET, ...);
-            ...
-            const $QUERY = ... + $HASH + ...;
-            ...
-            $POOL.query($QUERY);
+      # Structure B: catches standalone global function wraps (e.g., hash())
+      - pattern: |
+          const $HASH = await $METHOD($SECRET, ...);
+          ...
+          const $QUERY = ... + $HASH + ...;
+          ...
+          $POOL.query($QUERY);
