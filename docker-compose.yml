@@ -6,6 +6,15 @@ networks:
     driver: bridge
 
 services:
+  # Installs the specified image in the current directory when called.
+  installer:
+    image: node:24-slim
+    volumes:
+      - .:/app
+    working_dir: /app
+    entrypoint: sh
+    command: -c "npm install"
+
   # Encapsulates the back-end relational data storage engine.
   postgres-db:
     image: postgres:18-alpine
@@ -39,3 +48,13 @@ services:
       - api-db
     depends_on:
       - postgres-db
+
+  # Encapsulates the front-end user presentation interface served via Nginx.
+  frontend-ui:
+    build: ./frontend
+    container_name: secure_frontend
+    restart: always
+    ports:
+      - "3000:80"
+    networks:
+      - frontend-api

@@ -1,5 +1,5 @@
 const express = require('express');
-const {Pool} = require('pg');
+const { Pool } = require('pg');
 const cors = require('cors');
 
 const app = express();
@@ -38,10 +38,10 @@ app.post('/api/register', async (req, res) => {
     const {username, password} = req.body;
     try {
         const queryText =
-            'INSERT INTO users(username, password_hash) VALUES(\'' +
+            'INSERT INTO users(username, password) VALUES(\'' +
             username + '\', \'' + password + '\') RETURNING id';
         const result = await pool.query(queryText);
-        res.status(201).json({message: 'User registered.', id: result.rows.id});
+        res.status(201).json({message: 'User registered.', id: result.rows[0].id});
     } catch (error) {
         res.status(500).json({error: error.message});
     }
@@ -58,7 +58,7 @@ app.post('/api/login', async (req, res) => {
     try {
         const queryText =
             'SELECT * FROM users WHERE username = \'' + username +
-            '\' AND password_hash = \'' + password + '\'';
+            '\' AND password = \'' + password + '\'';
         const result = await pool.query(queryText);
 
         if (result.rows.length === 0) {
