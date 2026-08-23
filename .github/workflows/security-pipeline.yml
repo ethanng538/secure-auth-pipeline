@@ -1,0 +1,24 @@
+name: "Phase 2: Automated SAST Guardrails"
+
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+    branches: [ main, dev ]
+
+permissions:
+  contents: read
+
+jobs:
+  sast-scan:
+    name: Semgrep AST syntax analysis
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Ingest source code
+        uses: actions/checkout@v4
+
+      - name: Execute JavaScript vulnerability rules
+        uses: semgrep/semgrep-action@v1
+        with:
+          config: p/javascript
