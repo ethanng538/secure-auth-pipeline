@@ -14,9 +14,7 @@ export default function App() {
         e.preventDefault();
         setMessage('');
 
-        const endpoint = isRegisterMode
-            ? 'http://localhost:5000/api/register'
-            : 'http://localhost:5000/api/login';
+        const endpoint = isRegisterMode ? '/api/register' : '/api/login';
 
         try {
             const response = await fetch(endpoint, {
