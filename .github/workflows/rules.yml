@@ -25,8 +25,8 @@ rules:
     message: |
       🚨 APPSEC DETECTOR: Insecure Dataflow - Unsanitised Storage (CWE-256)
       
-      The system detected a database transaction interacting with identity registries 
-      where user parameters are routed directly to persistent data components without 
+      The system detected a database transaction interacting with identity registries
+      where user parameters are routed directly to persistent data components without
       passing through an approved cryptographic sanitisation transformation.
       
       Remediation: pass incoming credential blocks through an irreversible hashing 
