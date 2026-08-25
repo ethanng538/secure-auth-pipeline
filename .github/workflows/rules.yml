@@ -54,14 +54,20 @@ rules:
       - pattern: |
           const $HASH = await $CRYPTO.$METHOD($SECRET, ...);
           ...
-          const $QUERY = ... + $HASH + ...;
+          const $VALUES = [..., $HASH, ...];
           ...
-          $POOL.query($QUERY);
+          $POOL.query($QUERY, $VALUES);
 
       # Structure B: catches standalone global function wraps (e.g., hash())
       - pattern: |
           const $HASH = await $METHOD($SECRET, ...);
           ...
-          const $QUERY = ... + $HASH + ...;
+          const $VALUES = [..., $HASH, ...];
           ...
-          $POOL.query($QUERY);
+          $POOL.query($QUERY, $VALUES);
+
+      # Structure C: catches parameterised SELECT lookups that don't involve a password parameter
+      - pattern: |
+          const $QUERY = '...';
+          ...
+          $POOL.query($QUERY, [ $VAL ]);
