@@ -31,43 +31,19 @@ rules:
       
       Remediation: pass incoming credential blocks through an irreversible hashing 
       module before executing database storage actions.
-    patterns:
-      - pattern-either:
-        - pattern: |
-            const $QUERY = $SQL_STRING;
-            ...
-            $POOL.query($QUERY);
-        - pattern: |
-            const $QUERY = $SQL_STRING;
-            ...
-            $POOL.query($QUERY, ...)
-        - pattern: $POOL.query($SQL_STRING)
-        - pattern: $POOL.query($SQL_STRING, ...)
+    mode: taint
 
-      - metavariable-regex:
-          metavariable: $SQL_STRING
-          # Broad case-insensitive behavioural check looking for queries touching critical tables
-          regex: '(?i).*(users|accounts|credentials|login|register).*'
+    pattern-sources:
+      - pattern: req.body.$PARAM
+      - pattern: req.body
 
-    pattern-not-either:
-      # Structure A: catches modular library object methods (e.g., bcrypt.hash)
-      - pattern: |
-          const $HASH = await $CRYPTO.$METHOD($SECRET, ...);
-          ...
-          const $VALUES = [..., $HASH, ...];
-          ...
-          $POOL.query($QUERY, $VALUES);
+    pattern-sanitizers:
+      - pattern: $CRYPTO.$METHOD(...)
+      - pattern: $METHOD(...)
 
-      # Structure B: catches standalone global function wraps (e.g., hash())
-      - pattern: |
-          const $HASH = await $METHOD($SECRET, ...);
-          ...
-          const $VALUES = [..., $HASH, ...];
-          ...
-          $POOL.query($QUERY, $VALUES);
-
-      # Structure C: catches parameterised SELECT lookups that don't involve a password parameter
-      - pattern: |
-          const $QUERY = '...';
-          ...
-          $POOL.query($QUERY, [ $VAL ]);
+    pattern-sinks:
+      - pattern: $POOL.query($SQL_STRING, ...)
+        # Metavariable constraint isolates the alert to queries targeting user tables
+        requires: metavariable-regex
+        metavariable: $SQL_STRING
+        regex: '(?i).*(users|accounts|credentials|login|register).*'
