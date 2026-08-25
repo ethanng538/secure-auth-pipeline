@@ -1,6 +1,7 @@
 const express = require('express');
 const { Pool } = require('pg');
 const cors = require('cors');
+const bcrypt = require('bcrypt');
 
 const app = express();
 app.use(cors());
@@ -35,12 +36,14 @@ app.get('/health', (req, res) => {
  * @param {express.Response} res Returns status message or systemic database error.
  */
 app.post('/api/register', async (req, res) => {
-    const {username, password} = req.body;
+    const { username, password } = req.body;
     try {
-        const queryText =
-            'INSERT INTO users(username, password) VALUES(\'' +
-            username + '\', \'' + password + '\') RETURNING id';
-        const result = await pool.query(queryText);
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const queryText = 'INSERT INTO users(username, password) VALUES($1, $2) RETURNING id';
+        const queryValues = [username, hashedPassword];
+
+        const result = await pool.query(queryText, queryValues);
+
         res.status(201).json({message: 'User registered.', id: result.rows[0].id});
     } catch (error) {
         res.status(500).json({error: error.message});
@@ -54,16 +57,24 @@ app.post('/api/register', async (req, res) => {
  * @param {express.Response} res Returns success confirmation or access denial.
  */
 app.post('/api/login', async (req, res) => {
-    const {username, password} = req.body;
+    const { username, password } = req.body;
     try {
-        const queryText =
-            'SELECT * FROM users WHERE username = \'' + username +
-            '\' AND password = \'' + password + '\'';
-        const result = await pool.query(queryText);
+        const queryText = 'SELECT * FROM users WHERE username = $1';
+        const queryValues = [username];
+
+        const result = await pool.query(queryText, queryValues);
 
         if (result.rows.length === 0) {
             return res.status(401).json({error: 'Login failed'});
         }
+
+        const userRow = result.rows[0];
+        const isMatch = await bcrypt.compare(password, userRow.password);
+
+        if (!isMatch) {
+            return res.status(401).json({error: 'Login failed'});
+        }
+
         res.status(200).json({message: 'Welcome'});
     } catch (error) {
         res.status(500).json({error: error.message});
