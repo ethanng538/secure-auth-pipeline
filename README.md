@@ -17,7 +17,7 @@
 
 ### 📍 Phase 1: The Functional Baseline (The Initial Login Page)
 -   **Objective:** Build a responsive full-stack authentication portal using React (Tailwind CSS) and an Express.js API
-    talking to a Dockerised PostgreSQL instance.
+    talking to a Dockerised PostgreSQL server.
 -   **Security Posture:** Plaintext storage and dynamic string-concatenated queries are used to establish an
     intentional baseline for testing.
 
@@ -27,18 +27,17 @@
 -   **The Guardrail:** Integrated a **GitHub Actions pipeline** utilising the
     **Semgrep AST (Abstract Syntax Tree) engine**.
 -   **The Result:** The pipeline successfully scans the repository on every push, automatically identifying and
-    blocking code containing the plaintext storage (`CWE-256`) and SQL injection (`CWE-89`) vulnerabilities.
+    blocking code containing the SQL injection (`CWE-89`) and plaintext storage (`CWE-256`) vulnerabilities.
 
 ### 📍 Phase 3: Defensive Emulation (Attacking the Frontend via Kali Linux)
-*   **Objective:** Go beyond source code scanning. Step into the shoes of an attacker to verify runtime weaknesses.
-*   **The Attack Vector:** Booting up an isolated local container network and using **Kali Linux toolchains**
-    (`sqlmap`, OWASP ZAP proxy) to actively attack the exposed frontend forms and backend ports (`5000`),
-    forcing the database to leak information or bypass the authentication gate.
+- **Objective:** Go beyond source code scanning. Step into the shoes of an attacker to verify runtime weaknesses.
+- **The Attack Vector:** Booting up an isolated local container and using **Kali Linux toolchains**
+  (nmap, dirb, Wireshark) to evaluate the attack surface and find vulnerabilities.
 
 ### 📍 Phase 4: Runtime Operational Validation (DAST Evolution)
-*   **Objective:** Use the data gathered from active exploitation to implement mature inputs validation and
+- **Objective:** Use the data gathered from active exploitation to implement mature inputs validation and
     dynamic verification layers.
-*   **The Defence:** Merging parameterised queries and modern cryptographic hashing abstractions, confirming
+- **The Defence:** Merging parameterised queries and modern cryptographic hashing abstractions, confirming
     the fixes survive both the automated pipeline scans and live penetration testing.
 
 ---
