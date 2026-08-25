@@ -37,7 +37,7 @@ future updates or feature branches are automatically checked for structural risk
 Upon pushing the initial baseline code, the pipeline instantly halted execution, reporting
 **4 blocking findings** across our active authentication routes.
 
-![Semgrep Pipeline Results](images/semgrep-results.png)
+![Semgrep pipeline results](images/semgrep-results.png)
 
 ```text
 ┌─────────────────┐
@@ -89,6 +89,8 @@ tracking the state of information as it flows through the system:
 
 Because our updated logic properly hashes passwords, the data engine clears the pipeline instantly. This eliminated
 the false positives permanently while ensuring future code additions remain perfectly secure.
+
+![Semgrep pipeline results after patches](images/semgrep-results-post-patch.png)
 
 ---
 
