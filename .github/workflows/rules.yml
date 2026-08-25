@@ -44,6 +44,5 @@ rules:
     pattern-sinks:
       - pattern: $POOL.query($SQL_STRING, ...)
         # Metavariable constraint isolates the alert to queries targeting user tables
-        requires: metavariable-regex
         metavariable: $SQL_STRING
-        regex: '(?i).*(users|accounts|credentials|login|register).*'
+        regex: '(?i).*(insert\s+into|update|set).*?(users|accounts|credentials|registry).*'

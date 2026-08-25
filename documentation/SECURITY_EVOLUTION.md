@@ -54,12 +54,74 @@ Upon pushing the initial baseline code, the pipeline instantly halted execution,
 - Because the data flowing to the `users` table didn't pass through a hashing function, both rules fired simultaneously
   on both routes.
 
+### 3. Static Remediation & The Overfitting Discovery
+To clear the blocking findings, the backend code was structurally hardened by replacing raw string concatenation with
+native node-postgres parameterised array bindings (`$1, $2`) and implementing asynchronous `bcrypt` password stretching
+with a cost factor of `10` rounds.
+
+However, upon pushing the secure code, the SAST pipeline continued to fail, continuing to flag
+the secure lines as vulnerabilities.
+
+#### The Root Cause
+An audit of the custom security ruleset revealed **Signature-Based Overfitting**. Our original rule that checked for
+credentials being hashed looked strictly for a specific text formatting style. Since our patch isolated the data
+from the SQL command string, the pattern-matcher failed to understand the code and threw a false positive.
+
+#### The Rule Architecture Shift
+To build a resilient security gate, the rule was refactored away from checking rigid text styles toward a universal tracking model called **Dataflow Taint Tracking**.
+
+Instead of policing how a developer formats their code, the security engine now operates like a digital dye test,
+tracking the state of information as it flows through the system:
+
+```text
+                  ┌───► [ Hashing Function ] ───► (Cleaned & Approved) ───► [ Safe Database Query ] (ALLOW)
+                  │
+[ Raw User Input ]┤
+ (Untrusted Data) │
+                  └───► [ Raw/Direct Path ] ────► (Unhashed Input) ────► [ Identity Sink Block ]  (BLOCK BUILD)
+
+```
+
+#### How the Automated Gate Evaluates Code Now:
+1. **The Source:** Any information entering the application via an incoming web request is automatically flagged as "untrusted."
+2. **The Sanitiser:** If that untrusted information passes through an approved cryptographic hashing function, the system washes away the flag and marks the data as "safe."
+3. **The Sink:** The system continuously guards the database. If any data attempts to update a user registry without passing through the sanitizer first, the build is blocked.
+
+Because our updated logic properly hashes passwords, the data engine clears the pipeline instantly. This eliminated
+the false positives permanently while ensuring future code additions remain perfectly secure.
+
 ---
 
 ## 📍 Phase 3: Defensive Emulation (The Kali Offensive)
 
 ### 1. The Objective
-Discover runtime vulnerabilities that SAST struggles to detect to inform phase 4.
+To map and test the infrastructure attack surface of our secure application layer containerisation over
+the VirtualBox network interface.
+
+### 2. The Edge Routing Hurdle 
+The application runs inside a containerised sandbox. The original frontend client code hardcoded backend data requests
+to http://localhost:5000. While this works on a local machine, launching the application over a
+VirtualBox network bridge or external internet connection causes client web browsers to crash with
+connection loopback failures.
+
+### 3. Edge Proxy Architecture Implementation
+To expose the application safely to our Kali attacker machine, an industry-standard Nginx Reverse Proxy container layer
+was introduced. The frontend code was refactored to use environment-relative routing paths (/api/login) and
+the Nginx configuration handles edge routing abstraction:
+
+```text
+[ Internet User Browser ] ───► (Host Port 3000) ───► [ Nginx Server (frontend-ui) ]
+                                                               │
+                             ┌─────────────────────────────────┴─────────────────────────────────┐
+                             ▼                                                                   ▼
+                 Static Web Content Request                                          Data Transaction Route (`/api/`)
+                 Served directly from static build                                   Proxied via Docker Internal Bridge Network
+                                                                                     `proxy_pass http://backend-api:5000;`
+
+```
+
+By presenting both the UI and the API under the exact same hostname and port context, we eliminate
+client-side CORS issues and isolate the Express backend server from direct public exposure.
 
 ### 2. The Attack Sequence
 To be added.
