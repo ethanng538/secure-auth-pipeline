@@ -13,7 +13,8 @@ jobs:
     permissions:
       contents: write
       issues: write
-      security-events: write
+      actions: write
+      checks: write
 
     env:
       DB_USER: ${{ secrets.PIPELINE_DB_USER }}
@@ -63,7 +64,6 @@ jobs:
           cmd_options: '-z "-config connection.ssl.signed=false" -c .github/security-rules/zap-rules.conf'
           fail_action: true
           allow_issue_writing: true
-          artifact_name: 'zaproxy'
 
       - name: Teardown execution stack
         if: always()
