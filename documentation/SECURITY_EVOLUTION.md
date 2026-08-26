@@ -154,11 +154,11 @@ PORT     STATE SERVICE    VERSION
 
 #### Step 2: Guessing Hidden Pathways (The Dirb Attack)
 I downloaded a Metasploit wordlist used a tool called **Dirb** to automatically guess thousands of common folder and
-pathway names against the web server to see if any hidden files are accidentally left public.
+pathway names against the servers to see if any hidden files were accidentally left public.
 
--   **What we found:** Dirb successfully discovered the unauthenticated diagnostic path: `/health`
--   **The Consequence:** Exposing a raw `/health` path without requiring a login allows any random internet user to
-    look at the internal system health metrics and plan a deeper attack.
+-   **What we found:** Dirb successfully discovered the diagnostic path: `/health`
+-   **The Consequence:** An attacker can bypass the Nginx proxy layer and scrape diagnostic metrics to plan a
+    deeper attack.
 
 #### Step 3: Sniffing Network Traffic (The Wireshark Attack)
 I launched **Wireshark**, a standard network capture utility that records all data packets travelling through
