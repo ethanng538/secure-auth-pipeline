@@ -13,8 +13,7 @@ jobs:
     permissions:
       contents: write
       issues: write
-      actions: write
-      checks: write
+      security-events: write
 
     env:
       DB_USER: ${{ secrets.PIPELINE_DB_USER }}
@@ -57,7 +56,7 @@ jobs:
           fi
 
       - name: Execute automated dynamic vulnerability scan
-        uses: zaproxy/action-baseline@v0.13.0
+        uses: zaproxy/action-baseline@v0.15.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           target: 'https://localhost:3443'
