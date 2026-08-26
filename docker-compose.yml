@@ -69,10 +69,10 @@ services:
       - .:/zap/wrk/:rw
     entrypoint: [ "zap.sh" ]
     command: [
-      "-t", "https://secure_frontend:443",
-      "-z", "-config connection.ssl.signed=false",
-      "-I",
-      "-r", "dast_report.html"
+      "-cmd",
+      "-quickurl", "https://secure_frontend:443",
+      "-quickout", "/zap/wrk/dast_report.html",
+      "-config", "connection.ssl.signed=false"
     ]
     networks:
       - frontend-api
