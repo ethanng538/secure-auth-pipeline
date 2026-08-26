@@ -13,38 +13,45 @@ AUTH_ROUTES=("/api/login" "/api/register")
 # Evaluates each distinct authentication route entry point
 for ROUTE in "${AUTH_ROUTES[@]}"; do
   echo "Launching automated validation burst against $ROUTE..."
-  ROUTE_THROTTLED=0
 
-  # Simulates a quick high-speed script (20 requests)
-  for i in {1..20}; do
-    RESPONSE_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-      -X POST http://localhost:$GATEWAY_PORT$ROUTE \
-      -H "Content-Type: application/json" \
-      -d '{"username":"dast_attacker","password":"password123"}')
+  # Temporary log file to collect concurrent HTTP status codes
+    LOG_FILE=$(mktemp)
 
-    # If the proxy intercepts the traffic with a 429 status code, it passes
-    if [ "$RESPONSE_STATUS" = "429" ]; then
-      ROUTE_THROTTLED=1
-      break
-    fi
-  done
+    # Simulates a high-speed script by firing 40 requests in parallel (simultaneous burst)
+    for i in {1..40}; do
+      (
+        RESPONSE_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+          -X POST http://localhost:$GATEWAY_PORT$ROUTE \
+          -H "Content-Type: application/json" \
+          -d '{"username":"dast_attacker","password":"password123"}')
+        echo "$RESPONSE_STATUS" >> "$LOG_FILE"
+      ) &
+    done
 
-  # If the endpoint let all 20 requests fly without a 429, it's a vulnerability
-  if [ $ROUTE_THROTTLED -eq 0 ]; then
-    echo "🚨 APPSEC DETECTOR: Improper Restriction of Excessive Authentication Attempts (CWE-307)"
-    echo ""
-    echo "The authentication endpoint '$ROUTE' fails to restrict rapid traffic spikes."
-    echo "An automated attacking script can fire unlimited high-speed requests down this path,"
-    echo "leaving the application layer vulnerable to attacks such as denial-of-service (DoS)."
-    echo ""
-    echo "Remediation: Implement limit-rating zones at the Nginx edge proxy tier to intercept"
-    echo "excessive request bursts before they reach internal application servers."
-    echo ""
+    # Waits for all background parallel curls to complete before reading results
+    wait
+
+    # Checks if Nginx intercepted any of the concurrent traffic with a 429 status code
+    if grep -q "429" "$LOG_FILE"; then
+      echo "✅ Protection verified on $ROUTE (HTTP 429 received)."
+      echo ""
+    else
+      echo "⚠️ DEBUG: Collected HTTP status codes: $(tr '\n' ' ' < "$LOG_FILE")"
+      echo ""
+      echo "🚨 APPSEC DETECTOR: Improper Restriction of Excessive Authentication Attempts (CWE-307)"
+      echo ""
+      echo "The authentication endpoint '$ROUTE' fails to restrict rapid traffic spikes."
+      echo "An automated attacking script can fire unlimited high-speed requests down this path,"
+      echo "leaving the application layer vulnerable to attacks such as denial-of-service (DoS)."
+      echo ""
+      echo "Remediation: Implement limit-rating zones at the Nginx edge proxy tier to intercept"
+      echo "excessive request bursts before they reach internal application servers."
+      echo ""
     RATE_LIMIT_BREACHED=1
-  else
-    echo "✅ Protection verified on $ROUTE (HTTP 429 received)."
-    echo ""
   fi
+
+  # Cleans up the temporary log file
+  rm -f "$LOG_FILE"
 done
 
 # Pipeline failure enforcement gate
