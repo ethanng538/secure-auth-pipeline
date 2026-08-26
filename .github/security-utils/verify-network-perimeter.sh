@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 echo "Auditing environment network perimeter isolation boundaries..."
 PERIMETER_BREACHED=0
 
@@ -14,18 +13,23 @@ for CONTAINER_ID in $CONTAINERS; do
     continue
   fi
 
-  # Look for explicitly declared "ports" configuration arrays
+  # Looks for explicitly declared "ports" configuration arrays
   PORT_BINDINGS=$(docker inspect --format='{{json .NetworkSettings.Ports}}' $CONTAINER_ID)
-  if [ "$PORT_BINDINGS" != "null" ] && [ "$PORT_BINDINGS" != "{}" ] && [ ! -z "$PORT_BINDINGS" ]; then
-    echo "🚨 APPSEC DETECTOR: Exposure of Sensitive System Information via Configuration (CWE-200 / CWE-497)"
-    echo ""
-    echo "The infrastructure configuration profile explicitly publishes internal service ports straight to the host interface."
-    echo "External reconnaissance tools can locate these backend components, completely bypassing edge reverse proxy access controls."
-    echo ""
-    echo "Remediation: Remove the 'ports' block definition from the '$CONTAINER_NAME' service in the root docker-compose.yml file."
-    echo ""
-    PERIMETER_BREACHED=1
-  fi
+    if [ "$PORT_BINDINGS" != "null" ] && [ "$PORT_BINDINGS" != "{}" ] && [ ! -z "$PORT_BINDINGS" ]; then
+      # Extracts the host ports cleanly from the JSON structure
+      HOST_PORTS=$(echo "$PORT_BINDINGS" | grep -oE '"HostPort":"[0-9]+"' | grep -oE '[0-9]+' | sort -u | tr '\n' ',' | sed 's/,$//')
+
+      if [ ! -z "$HOST_PORTS" ]; then
+        echo "🚨 APPSEC DETECTOR: Exposure of Sensitive System Information via Configuration (CWE-200 / CWE-497)"
+        echo ""
+        echo "The infrastructure configuration profile explicitly publishes internal service ports straight to the host interface."
+        echo "External reconnaissance tools can locate these backend components, completely bypassing edge reverse proxy access controls."
+        echo ""
+        echo "Remediation: Remove the 'ports' block definition from the '$CONTAINER_NAME' service in the root docker-compose.yml file."
+        echo ""
+        PERIMETER_BREACHED=1
+      fi
+    fi
 
   # Extract the container's internal exposed ports
   EXPOSED_PORTS=$(docker inspect --format='{{json .Config.ExposedPorts}}' $CONTAINER_ID | grep -oE '[0-9]+' | sort -u)
