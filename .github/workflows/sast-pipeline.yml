@@ -21,4 +21,4 @@ jobs:
       - name: Execute local rule matrix
         # Runs the official Semgrep container engine directly via the open CLI
         run: |
-          docker run --rm -v "${{ github.workspace }}:/src" semgrep/semgrep semgrep scan --config=/src/.github/security-policies/sast-rules.yml --error
+          docker run --rm -v "${{ github.workspace }}:/src" semgrep/semgrep semgrep scan --config=/src/.github/security-rules/sast-rules.yml --error
