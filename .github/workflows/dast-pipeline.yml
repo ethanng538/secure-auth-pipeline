@@ -55,7 +55,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           target: 'https://localhost:3443'
-          cmd_options: '-config connection.ssl.signed=false'
+          cmd_options: '-z "-config connection.ssl.signed=false"'
           fail_action: true
           allow_issue_writing: true
 
