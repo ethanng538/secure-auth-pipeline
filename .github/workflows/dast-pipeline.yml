@@ -54,6 +54,7 @@ jobs:
         run: |
           docker run --rm \
             --network="host" \
+            -u "$(id -u):$(id -g)" \
             -v "${{ github.workspace }}:/zap/wrk/:rw" \
             ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
             -t https://localhost:3443 \
