@@ -8,4 +8,19 @@ for i in {1..30}; do
 done
 
 echo "❌ Timeout: Application failed to initialise safely."
+echo "=== 📊 DEBUGGING INFO: Container Status ==="
+docker compose ps
+echo ""
+
+echo "=== 📋 DEBUGGING INFO: Recent Container Logs ==="
+docker compose logs --tail=50
+echo ""
+
+echo "=== NGINX DESCRIPTOR LOGS ==="
+docker compose logs frontend-ui
+echo ""
+
+echo "=== BACKEND RUNTIME LOGS ==="
+docker compose logs backend-api
+echo ""
 exit 1
