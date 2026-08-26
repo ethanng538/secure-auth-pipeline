@@ -1,7 +1,15 @@
 echo "Verifying transport layer encryption compliance..."
 
-# Fetch only the headers from the Nginx proxy gateway
-HEADERS=$(curl -sI http://localhost:3000)
+# Finds what public host port secure_frontend is using
+GATEWAY_PORT=$(docker port secure_frontend 80 | head -n 1 | grep -oE '[0-9]+$')
+
+# Fallback block if the container isn't listening on port 80 (e.g. it's already on 443)
+if [ -z "$GATEWAY_PORT" ]; then
+    GATEWAY_PORT=$(docker port secure_frontend 443 | head -n 1 | grep -oE '[0-9]+$')
+fi
+
+# Query the dynamically resolved gateway endpoint
+HEADERS=$(curl -sI http://localhost:$GATEWAY_PORT)
 
 # Assert that the server forces a secure protocol redirect or returns an HSTS header
 if echo "$HEADERS" | grep -qi "Strict-Transport-Security"; then

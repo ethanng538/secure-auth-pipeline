@@ -23,6 +23,7 @@ for CONTAINER_ID in $CONTAINERS; do
     echo "External reconnaissance tools can locate these backend components, completely bypassing edge reverse proxy access controls."
     echo ""
     echo "Remediation: Remove the 'ports' block definition from the '$CONTAINER_NAME' service in the root docker-compose.yml file."
+    PERIMETER_BREACHED=1
   fi
 
   # Extract the container's internal exposed ports
@@ -43,9 +44,8 @@ done
 
 # Pipeline failure enforcement gate
 if [ $PERIMETER_BREACHED -eq 1 ]; then
-  echo "❌ Pipeline halted. DAST guardrails detected active perimeter vulnerabilities."
   exit 1
 fi
 
-echo "✅ Perimeter validation complete. External boundaries are completely secure."
+echo "✅ Perimeter validation complete. External boundaries are secure."
 exit 0

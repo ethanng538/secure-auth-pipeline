@@ -38,7 +38,7 @@ jobs:
           
           if [ $FAILED -eq 1 ]; then
           echo ""
-          echo "❌ DAST Suite Halted: Unresolved environmental vulnerabilities detected."
+          echo "❌ Pipeline halted. Unresolved environmental vulnerabilities detected."
           exit 1
           fi
 
