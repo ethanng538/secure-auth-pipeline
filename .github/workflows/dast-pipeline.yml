@@ -45,17 +45,17 @@ jobs:
           exit 1
           fi
 
-          - name: Execute automated dynamic vulnerability scan
-            run: |
-              docker run --rm \
-                --network="host" \
-                -v "${{ github.workspace }}:/zap/wrk/:rw" \
-                ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
-                -t http://localhost:3000 \
-                -c /zap/wrk/.github/security-policies/dast-policy.conf \
-                -I \
-                -r dast_report.html
+      - name: Execute automated dynamic vulnerability scan
+        run: |
+          docker run --rm \
+            --network="host" \
+            -v "${{ github.workspace }}:/zap/wrk/:rw" \
+            ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
+            -t http://localhost:3000 \
+            -c /zap/wrk/.github/security-policies/dast-policy.conf \
+            -I \
+            -r dast_report.html
 
-          - name: Teardown execution stack
-            if: always()
-            run: docker compose down --volumes
+      - name: Teardown execution stack
+        if: always()
+        run: docker compose down --volumes

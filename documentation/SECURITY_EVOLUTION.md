@@ -282,4 +282,25 @@ floods the authentication endpoints, Nginx steps in immediately, cuts off the tr
 clean `HTTP 429 Too Many Requests` error before the spam can ever touch or slow down the backend server.
 
 #### Implementing transport-level encryption
-To be added.
+The final automated security sweep flagged a severe configuration issue: the front-door gateway allowed
+unencrypted web traffic and completely lacked a Strict-Transport-Security (HSTS) header. This exposed
+user authentication sessions directly to network data interception attacks (CWE-319).
+
+To fix this, we updated three core areas:
+-   **Staging Certificates:** I updated the frontend Dockerfile to generate a temporary security certificate directly
+    inside the container during the build phase.
+-   **Split Gateway Model:** I divided nginx.conf into two separate blocks. Port 80 serves no data and instantly
+    redirects users to HTTPS (HTTP 301). Port 443 terminates the secure connection and injects the HSTS header to
+    block future unencrypted attempts.
+-   **Dual Ingress:** I updated the root Docker configuration file to expose both standard web traffic and
+    secure pathways (3000:80 and 3443:443).
+
+Since the system now exposes two host ports, the automated test script was refactored to prevent false alarms.
+It now audits each entry point independently:
+-   **Step 1 (Entrance Check):** Hits port 3000 to ensure the server immediately forces a secure upgrade and
+    links directly to a https:// web address.
+-   **Step 2 (Landing Zone Check):** Hits port 3443 to verify the secure page responds cleanly without crashing
+    (CWE-755) and actively delivers the HSTS safety token. 
+
+This decoupled architecture allows the deployment pipeline to pass cleanly while providing clear troubleshooting logs
+if our front door configurations ever drift.

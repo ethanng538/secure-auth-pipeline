@@ -54,5 +54,6 @@ services:
     restart: always
     ports:
       - "3000:80"
+      - "3443:443"
     networks:
       - frontend-api
