@@ -1,0 +1,40 @@
+name: "Phase 4: Automated DAST Guardrails"
+
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+    branches: [ main, dev ]
+
+jobs:
+  dast-scan:
+    name: Core Environmental Security Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Ingest infrastructure files
+        uses: actions/checkout@v4
+
+      - name: Build and launch application environment
+        run: docker compose up --build -d
+
+      - name: Await system initialisation
+        run: bash .github/security-utils/await-health.sh
+
+      - name: Verify network perimeter enclosure
+        run: bash .github/security-utils/verify-network-perimeter.sh
+
+      - name: Execute automated dynamic vulnerability scan
+        run: |
+          docker run --rm \
+            --network="host" \
+            -v "${{ github.workspace }}:/zap/wrk/:rw" \
+            ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
+            -t http://localhost:3000 \
+            -c /zap/wrk/.github/security-policies/dast-policy.conf \
+            -I \
+            -r dast_report.html
+
+      - name: Teardown execution stack
+        if: always()
+        run: docker compose down --volumes
