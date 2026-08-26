@@ -22,5 +22,4 @@ echo ""
 
 echo "=== BACKEND RUNTIME LOGS ==="
 docker compose logs backend-api
-echo ""
 exit 1

@@ -10,6 +10,11 @@ jobs:
   dast-scan:
     runs-on: ubuntu-latest
 
+    env:
+      DB_USER: ${{ secrets.PIPELINE_DB_USER }}
+      DB_PASSWORD: ${{ secrets.PIPELINE_DB_PASSWORD }}
+      DB_NAME: ${{ secrets.PIPELINE_DB_NAME }}
+
     steps:
       - name: Ingest infrastructure files
         uses: actions/checkout@v4
