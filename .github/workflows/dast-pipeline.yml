@@ -56,7 +56,7 @@ jobs:
             --network="host" \
             -v "${{ github.workspace }}:/zap/wrk/:rw" \
             ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
-            -t http://localhost:3000 \
+            -t https://localhost:3443 \
             -c /zap/wrk/.github/security-policies/dast-policy.conf \
             -I \
             -r dast_report.html
