@@ -9,6 +9,8 @@ fi
 
 # The target authentication routes
 AUTH_ROUTES=("/api/login" "/api/register")
+TOTAL_BURST_REQUESTS=40
+REQUIRED_BLOCKS=5
 
 # Evaluates each distinct authentication route entry point
 for ROUTE in "${AUTH_ROUTES[@]}"; do
@@ -18,7 +20,7 @@ for ROUTE in "${AUTH_ROUTES[@]}"; do
     LOG_FILE=$(mktemp)
 
     # Simulates a high-speed script by firing 40 requests in parallel (simultaneous burst)
-    for i in {1..40}; do
+    for i in {seq 1 $TOTAL_BURST_REQUESTS}; do
       (
         RESPONSE_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
           -X POST http://localhost:$GATEWAY_PORT$ROUTE \
@@ -31,8 +33,11 @@ for ROUTE in "${AUTH_ROUTES[@]}"; do
     # Waits for all background parallel curls to complete before reading results
     wait
 
-    # Checks if Nginx intercepted any of the concurrent traffic with a 429 status code
-    if grep -q "429" "$LOG_FILE"; then
+    # Count how many total requests were actively blocked by Nginx
+    TOTAL_429=$(grep -c "429" "$LOG_FILE")
+
+    # Checks if Nginx intercepted at least 5 bad requests
+    if [ "$TOTAL_429" -lt "$REQUIRED_BLOCKS" ]; then
       echo "✅ Protection verified on $ROUTE (HTTP 429 received)."
       echo ""
     else
