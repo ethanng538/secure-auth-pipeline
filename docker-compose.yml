@@ -57,3 +57,24 @@ services:
       - "3443:443"
     networks:
       - frontend-api
+
+  # Encapsulates automated dynamic application security testing (DAST) within the network mesh.
+  zap-scanner:
+    image: ghcr.io/zaproxy/zaproxy:stable
+    container_name: pipeline_zap_scanner
+    profiles:
+      - pipeline-testing
+    volumes:
+      - .:/zap/wrk/:rw
+    entrypoint: [ "zap-baseline.py" ]
+
+    command: [
+      "-t", "https://secure_frontend:443",
+      "-z", "-config connection.ssl.signed=false",
+      "-I",
+      "-r", "dast_report.html"
+    ]
+    networks:
+      - frontend-api
+    depends_on:
+      - frontend-ui

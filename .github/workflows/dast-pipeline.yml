@@ -51,15 +51,7 @@ jobs:
           fi
 
       - name: Execute automated dynamic vulnerability scan
-        run: |
-          docker run --rm \
-            --network="host" \
-            -u "$(id -u):$(id -g)" \
-            -v "${{ github.workspace }}:/zap/wrk/:rw" \
-            ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
-            -t https://localhost:3443 \
-            -I \
-            -r dast_report.html
+        run: docker compose run --rm --run-profiles zap-scanner
 
       - name: Teardown execution stack
         if: always()
