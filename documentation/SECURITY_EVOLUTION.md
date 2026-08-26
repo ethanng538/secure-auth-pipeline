@@ -9,19 +9,19 @@ eventual remediation.
 ## 📍 Phase 1: The Functional Baseline
 
 ### The Architectural State
-The initial milestone focused entirely on building a working full-stack authentication portal. The application pairs
-a responsive React frontend with an Express.js backend API, backed by a containerised PostgreSQL database.
+The initial milestone focused entirely on delivering a minimum viable product (MVP) authentication portal.
+The application pairs a responsive React frontend with an Express.js backend API, backed by a
+containerised PostgreSQL database.
 
 ### The Focus on Functional Success
 Development was driven by standard product requirements: an intuitive interface, successful account onboarding and
 accurate login verification.
 
--   **The Frontend:** A polished login UI that handles client-side form states and securely dispatches HTTP requests.
--   **The Backend:** Direct route handlers that extract user-provided credentials from the request body to execute
-  immediate database lookups and storage.
+-   **The Frontend:** A responsive UI that collects credentials and sends standard HTTP requests to the backend.
+-   **The Backend:** Route handlers that extract user input directly from the request body to run database queries.
 
 **The Engineering Reality:**
-At this stage, the project is a functional success. It passes standard manual testing flawlessly: users can
+At this stage, the project is a functional success. It passes manual QA testing flawlessly: users can
 successfully register an account and log in with their created credentials.
 
 ---
@@ -36,7 +36,7 @@ future updates or feature branches are automatically checked for structural risk
 
 ### The SAST Pipeline Results
 Upon pushing the initial baseline code, the pipeline halted execution, reporting
-**4 blocking findings** across the active authentication routes.
+**4 blocking findings** across the authentication routes.
 
 ![Semgrep pipeline results](images/semgrep-results.png)
 
@@ -49,27 +49,23 @@ Upon pushing the initial baseline code, the pipeline halted execution, reporting
    ❯❯❱ github.workflows.appsec-high-unhashed-credential-storage (CWE-256)
 ```
 
-**What this output means in plain English:**
--   Semgrep identified that lines `40-43` (registration) and lines `59-62` (login) were feeding unvalidated
-    text inputs straight into the database query engine (`pool.query`).
--   Because the data flowing to the `users` table didn't pass through a hashing function, both rules fired
-    simultaneously on both routes.
+-   **The Cause:** Registration and login routes fed unvalidated text inputs straight into `pool.query()` without
+    data sanitisation or cryptographic hashing.
 
 ### Static Remediation & The Overfitting Discovery
-To clear the blocking findings, the backend code was structurally hardened by replacing raw string concatenation with
-native node-postgres parameterised array bindings (`$1, $2`) and implementing asynchronous `bcrypt` password stretching
-with a cost factor of `10` rounds.
+To clear the blocking findings, I patched the vulnerabilities by implementing the following fixes:
+1. **Parameterised Queries:** Replaced dynamic string concatenation with native `node-postgres` array bindings (`$1, $2`) to neutralize SQL Injection.
+2. **Hashing:** Implemented asynchronous `bcrypt` password stretching with a cost factor of `10` rounds.
 
 However, upon pushing the secure code, the SAST pipeline continued to fail, continuing to flag
 the secure lines as vulnerabilities.
 
 #### The Root Cause
-An audit of the custom security ruleset revealed **Signature-Based Overfitting**. My original rule that checked for
-credentials being hashed looked strictly for a specific text formatting style. Since my patch isolated the data
-from the SQL command string, the pattern-matcher failed to understand the code and threw a false positive.
+The initial custom Semgrep rule relied on **Signature-Based Matching** (looking for strict text formatting patterns).
+The rule engine failed to recognise the secure patch and threw a false positive.
 
 #### The Rule Architecture Shift
-To build a resilient security gate, the rule was refactored away from checking rigid text styles toward a
+To build a resilient security gate, the rule was refactored away from rigid text matches toward a
 universal tracking model called **Dataflow Taint Tracking**.
 
 Instead of policing how a developer formats their code, the security engine now operates like a digital dye test,
@@ -84,15 +80,15 @@ tracking the state of information as it flows through the system:
 ```
 
 #### How the Automated Gate Evaluates Code Now:
-1. **The Source:** Any information entering the application via an incoming web request is automatically flagged as
-   "untrusted."
+1. **The Source:** Any input entering the application via an incoming web request is automatically flagged as
+   tainted (untrusted).
 2. **The Sanitiser:** If that untrusted information passes through an approved cryptographic hashing function,
-   the system washes away the flag and marks the data as "safe."
+   the system washes away the taint and marks the data as "safe".
 3. **The Sink:** The system continuously guards the database. If any data attempts to update a user registry without
    passing through the sanitiser first, the build is blocked.
 
-Because my updated logic properly hashes passwords, the data engine clears the pipeline instantly. This eliminated
-the false positives permanently while ensuring future code additions remain perfectly secure.
+**The Result:** Refactoring to Taint Tracking permanently eliminated the false positives while ensuring
+all future feature branches are automatically protected against credential leaks.
 
 ![Semgrep pipeline results after patches](images/semgrep-results-post-patch.png)
 
@@ -225,6 +221,8 @@ the Docker Runtime Daemon:
 With the current vulnerabilities identified, the pipeline halted, throwing explicit alerts regarding configuration flaws
 and unencrypted web traffic.
 
+![DAST pipeline results](images/dast-results.png)
+
 ### Infrastructure Remediation
 #### Reducing the Attack Surface
 To ensure no backend ports were exposed over the internet, the root Docker configuration file was updated along with the
@@ -303,4 +301,9 @@ It now audits each entry point independently:
     (CWE-755) and actively delivers the HSTS safety token. 
 
 This decoupled architecture allows the deployment pipeline to pass cleanly while providing clear troubleshooting logs
-if our front door configurations ever drift.
+if the port configurations ever drift.
+
+Testing with Wireshark indicated packets were successfully encrypted.
+
+## Reflection
+To be added.
