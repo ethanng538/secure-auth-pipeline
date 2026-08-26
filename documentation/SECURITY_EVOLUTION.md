@@ -108,7 +108,7 @@ VirtualBox network bridge or external internet connection causes the web client 
 
 ### Edge Proxy Architecture Implementation
 To expose the application safely to my Kali attacker machine, an industry-standard Nginx Reverse Proxy container layer
-was introduced. The frontend code was refactored to use environment-relative routing paths (/api/login) and
+was introduced. The frontend code was refactored to use environment-relative routing paths (`/api/login`) and
 the Nginx configuration handles edge routing abstraction:
 
 ```text
@@ -128,28 +128,28 @@ client-side CORS issues and isolate the Express backend server from direct publi
 ### The Attack Sequence
 
 #### Step 1: Scanning for Open Doors (The Port Scan)
-An aggressive network reconnaissance scan was executed using `Nmap` from the attacking Kali Linux VM  to audit
-the networks.
+An aggressive network reconnaissance scan was executed using `Nmap` from the attacking Kali Linux VM map
+active network listeners.
 
 -   **What I found:** The scan showed that three doors are wide open: Port `3000` (our main web server),
     Port `5000` (our Express backend server), and Port `5432` (our database server).
--   **The Consequence:** While Port 3000 is supposed to be open so users can view the website, leaving our raw backend
-    and database ports open to the public internet allows anyone to bypass our security guards and connect directly to
-    the raw data servers.
+-   **The Consequence:** While Port 3000 must be open so users can view the website, exposing ports 5000 and
+    5432 bypasses the Nginx security perimeter entirely, allowing adversaries to interact with the backend API and
+    database directly
 
-```text
-PORT     STATE SERVICE    VERSION
-3000/tcp open  http       nginx 1.25.5
-|_http-server-header: nginx/1.25.5
-|_http-title: frontend
-5000/tcp open  http       Node.js Express framework
-|_http-title: Error
-|_http-cors: HEAD GET POST PUT DELETE PATCH
-5432/tcp open  postgresql PostgreSQL DB
-```
+    ```text
+    PORT     STATE SERVICE    VERSION
+    3000/tcp open  http       nginx 1.25.5
+    |_http-server-header: nginx/1.25.5
+    |_http-title: frontend
+    5000/tcp open  http       Node.js Express framework
+    |_http-title: Error
+    |_http-cors: HEAD GET POST PUT DELETE PATCH
+    5432/tcp open  postgresql PostgreSQL DB
+    ```
 
 #### Step 2: Guessing Hidden Pathways (The Dirb Attack)
-I downloaded a Metasploit wordlist used a tool called **Dirb** to automatically guess thousands of common folder and
+I downloaded a Metasploit wordlist and used a tool called **Dirb** to automatically guess thousands of common folder and
 pathway names against the servers to see if any hidden files were accidentally left public.
 
 -   **What we found:** Dirb successfully discovered the diagnostic path: `/health`
@@ -160,7 +160,7 @@ pathway names against the servers to see if any hidden files were accidentally l
 I launched **Wireshark**, a standard network capture utility that records all data packets travelling through
 the network. We monitored the traffic while a test user logged into the portal.
 
--   **What we found:** Wireshark intercepted the network packet and instantly printed the raw login details in
+-   **What I found:** Wireshark intercepted the network packet and instantly printed the raw login details in
     plaintext:
     ```json
     {"username": "user", "password": "password123"}
@@ -208,9 +208,8 @@ the Docker Runtime Daemon:
 ```
 
 #### How the Automated Gate Evaluates Infrastructure:
-1. **Dynamic Port Harvesting:** Instead of checking fixed port lists, the perimeter script reads
-   container metadata at runtime. If a developer maps a new database or microservice and accidentally exposes it,
-   the script dynamically discovers the port and audits the connection.
+1. **Dynamic Port Harvesting:** The suite inspects container metadata at runtime. If a developer accidentally exposes
+   a backend or database port to the host interface, the script flags it automatically.
 2. **Adaptive Endpoint Targeting:** The transport script queries Docker to identify exactly which external port
    the Nginx front door is listening on. It automatically targets its connection checks whether it is evaluating
    HTTP staging environments or active HTTPS encryption rules.
@@ -225,8 +224,8 @@ and unencrypted web traffic.
 
 ### Infrastructure Remediation
 #### Reducing the Attack Surface
-To ensure no backend ports were exposed over the internet, the root Docker configuration file was updated along with the
-frontend's Vite configuration file. After this was done, the DAST pipeline indicated that the network permimeter was
+To shrink the network attack surface, I removed public port bindings for the API (`5000`) and database (`5432`) from
+the root Docker configuration file. After this was done, the DAST pipeline indicated that the network permimeter was
 isolated.
 
 However, during local integration verification, an unexpected security paradox appeared: running an `Nmap` scan from a
@@ -241,7 +240,8 @@ PORT     STATE    SERVICE    VERSION
 5432/tcp open     postgresql PostgreSQL DB
 ```
 
-Initially, this hinted at a dangerous false negative inside my automated DAST suite. The script reported the boundary was secure, yet an attacking OS could see the data layer.
+This suggested that there was a dangerous false negative inside my automated DAST suite. The script reported
+the boundary was secure, yet an attacking OS could see the data layer.
 
 This friction forced a critical moment of self-education regarding network isolation and the necessity of
 thorough multi-layered validation:
