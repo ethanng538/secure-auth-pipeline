@@ -24,5 +24,6 @@ else
     echo ""
     echo "Remediation: Configure Nginx to reject port 80 connections, bind TLS certificates"
     echo "and upgrade transmission requirements to HTTPS."
+    echo ""
     exit 1
 fi
