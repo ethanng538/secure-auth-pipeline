@@ -51,7 +51,7 @@ jobs:
           fi
 
       - name: Execute automated dynamic vulnerability scan
-        run: docker compose run --rm --run-profiles zap-scanner
+        run: docker compose --profile pipeline-testing run --rm zap-scanner
 
       - name: Teardown execution stack
         if: always()
