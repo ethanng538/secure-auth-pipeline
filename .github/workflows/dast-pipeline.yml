@@ -51,10 +51,13 @@ jobs:
           fi
 
       - name: Execute automated dynamic vulnerability scan
-        run: |
-          export ZAP_UID=$(id -u)
-          export ZAP_GID=$(id -g)
-          docker compose --profile pipeline-testing run --rm zap-scanner
+        uses: zaproxy/action-baseline@v0.13.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          target: 'https://localhost:3443'
+          cmd_options: '-config connection.ssl.signed=false'
+          fail_action: true
+          allow_issue_writing: true
 
       - name: Teardown execution stack
         if: always()
