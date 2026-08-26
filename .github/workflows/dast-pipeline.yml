@@ -20,7 +20,7 @@ jobs:
       - name: Await system initialisation
         run: bash .github/security-utils/await-health.sh
 
-      - name: Execute Environment Validation Sweeps
+      - name: Execute environment validation sweeps
         run: |
           FAILED=0
           

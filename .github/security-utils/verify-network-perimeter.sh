@@ -54,4 +54,5 @@ if [ $PERIMETER_BREACHED -eq 1 ]; then
 fi
 
 echo "✅ Perimeter validation complete. External boundaries are secure."
+echo ""
 exit 0

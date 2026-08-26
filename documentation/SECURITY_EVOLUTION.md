@@ -195,9 +195,6 @@ formal penetration test or manual audit occurs, this pipeline builds a permanent
 It automatically launches the environment, waits for a healthy state and inspects the system boundaries before
 any code can deploy.
 
-### The DAST Pipeline Results
-With the current vulnerabilities identified the pipeline halted,
-
 ### Designing Future-Proof Guardrails
 Recall the issue with overfitting when the SAST rules were first designed. If the testing scripts were hardcoded to
 look strictly for ports 5000 and 5432, or forced them to scan an exact address like http://localhost:3000,
@@ -223,3 +220,54 @@ the Docker Runtime Daemon:
    HTTP staging environments or active HTTPS encryption rules.
 3. **Cumulative Log Gathering:** Individual scripts process security errors silently without
    throwing early exit crashes. This ensures all vulnerabilities that caused the pipeline to fail are shown.
+
+### The DAST Pipeline Results
+With the current vulnerabilities identified, the pipeline halted, throwing explicit alerts regarding configuration flaws
+and unencrypted web traffic.
+
+### Infrastructure Remediation
+#### Reducing the Attack Surface
+To ensure no backend ports were exposed over the internet, the root Docker configuration file was updated along with the
+frontend's Vite configuration file. After this was done, the DAST pipeline indicated that the network permimeter was
+isolated.
+
+However, during local integration verification, an unexpected security paradox appeared: running an `Nmap` scan from a
+Kali Linux VM hosted within VirtualBox flagged port `5432/tcp` (PostgreSQL) as open.
+
+```text
+PORT     STATE    SERVICE    VERSION
+3000/tcp open     http       nginx 1.25.5
+|_http-server-header: nginx/1.25.5
+|_http-title: frontend
+5000/tcp filtered upnp
+5432/tcp open     postgresql PostgreSQL DB
+```
+
+Initially, this hinted at a dangerous false negative inside my automated DAST suite. The script reported the boundary was secure, yet an attacking OS could see the data layer.
+
+This friction forced a critical moment of self-education regarding network isolation and the necessity of
+thorough multi-layered validation:
+1. **The Investigation:** To prove the threat model, I introduced an external validation layer by scanning the host from
+   a completely separate physical machine on the local network. This external scan correctly reported the port as
+   filtered.
+
+    ```text
+    PORT     STATE    SERVICE    VERSION
+    3000/tcp open     tcpwrapped
+    5000/tcp filtered upnp
+    5432/tcp filtered postgresql
+    ```
+
+2. **The Discovery:** This taught me how virtualisation platforms interact at the kernel layer. When Docker establishes
+   a virtual bridge network, it lives natively on the host operating system kernel. Since VirtualBox also binds its
+   host-only or bridged adapters to that same kernel, the host machine quietly routes traffic internally between
+   the local VM and the local Docker network—bypassing external firewall realities.
+3. **The Engineering Takeaway:** The DAST pipeline script was operating with accuracy for its target deployment context.
+   However, relying blindly on a single testing vantage point is dangerous. True security engineering requires
+   verifying results outside of local hypervisor bubbles before writing off a validation failure.
+
+#### Protecting against denial-of-service (DoS) attacks
+To be added.
+
+#### Implementing transport-level encryption
+To be added.

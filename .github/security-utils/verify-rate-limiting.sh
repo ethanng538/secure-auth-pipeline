@@ -43,6 +43,7 @@ for ROUTE in "${AUTH_ROUTES[@]}"; do
     RATE_LIMIT_BREACHED=1
   else
     echo "✅ Protection verified on $ROUTE (HTTP 429 received)."
+    echo ""
   fi
 done
 
@@ -52,4 +53,5 @@ if [ $RATE_LIMIT_BREACHED -eq 1 ]; then
 fi
 
 echo "✅ Rate limiting validation complete. All authentication entry points are throttled."
+echo ""
 exit 0

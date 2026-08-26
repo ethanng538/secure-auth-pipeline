@@ -14,6 +14,7 @@ HEADERS=$(curl -sI http://localhost:$GATEWAY_PORT)
 # Assert that the server forces a secure protocol redirect or returns an HSTS header
 if echo "$HEADERS" | grep -qi "Strict-Transport-Security"; then
     echo "✅ Transport encryption validated. Security headers present."
+    echo ""
     exit 0
 else
     echo "🚨 APPSEC DETECTOR: Cleartext Transmission of Sensitive Information (CWE-319)"
