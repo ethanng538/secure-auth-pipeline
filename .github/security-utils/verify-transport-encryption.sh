@@ -1,8 +1,8 @@
 echo "Verifying transport layer encryption compliance..."
 
 # Targets the discrete public host mappings assigned to internal container gateways
-HTTP_PORT=$(docker port secure_frontend 80 2>/dev/null | awk -F ':' '{print $NF}')
-HTTPS_PORT=$(docker port secure_frontend 443 2>/dev/null | awk -F ':' '{print $NF}')
+HTTP_PORT=$(docker port secure_frontend 80 2>/dev/null | head -n 1 | awk -F ':' '{print $NF}' | tr -d '\r')
+HTTPS_PORT=$(docker port secure_frontend 443 2>/dev/null | head -n 1 | awk -F ':' '{print $NF}' | tr -d '\r')
 
 if [ -z "$HTTP_PORT" ] || [ -z "$HTTPS_PORT" ]; then
     echo "❌ Error: Could not resolve public HTTP (80) or HTTPS (443) ports for container 'secure_frontend'."
