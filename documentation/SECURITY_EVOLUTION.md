@@ -16,8 +16,8 @@ a responsive React frontend with an Express.js backend API, backed by a containe
 Development was driven by standard product requirements: an intuitive interface, successful account onboarding and
 accurate login verification.
 
-- **The Frontend:** A polished login UI that handles client-side form states and securely dispatches HTTP requests.
-- **The Backend:** Direct route handlers that extract user-provided credentials from the request body to execute
+-   **The Frontend:** A polished login UI that handles client-side form states and securely dispatches HTTP requests.
+-   **The Backend:** Direct route handlers that extract user-provided credentials from the request body to execute
   immediate database lookups and storage.
 
 **The Engineering Reality:**
@@ -36,7 +36,7 @@ future updates or feature branches are automatically checked for structural risk
 
 ### The Pipeline Results
 Upon pushing the initial baseline code, the pipeline instantly halted execution, reporting
-**4 blocking findings** across my active authentication routes.
+**4 blocking findings** across the active authentication routes.
 
 ![Semgrep pipeline results](images/semgrep-results.png)
 
@@ -50,10 +50,10 @@ Upon pushing the initial baseline code, the pipeline instantly halted execution,
 ```
 
 **What this output means in plain English:**
-- Semgrep identified that lines `40-43` (registration) and lines `59-62` (login) were feeding unvalidated
-  text inputs straight into the database query engine (`pool.query`).
-- Because the data flowing to the `users` table didn't pass through a hashing function, both rules fired simultaneously
-  on both routes.
+-   Semgrep identified that lines `40-43` (registration) and lines `59-62` (login) were feeding unvalidated
+    text inputs straight into the database query engine (`pool.query`).
+-   Because the data flowing to the `users` table didn't pass through a hashing function, both rules fired
+    simultaneously on both routes.
 
 ### Static Remediation & The Overfitting Discovery
 To clear the blocking findings, the backend code was structurally hardened by replacing raw string concatenation with
@@ -135,11 +135,11 @@ client-side CORS issues and isolate the Express backend server from direct publi
 An aggressive network reconnaissance scan was executed using `Nmap` from the attacking Kali Linux VM  to audit
 the networks.
 
-- **What I found:** The scan showed that three doors are wide open: Port `3000` (our main web server),
-  Port `5000` (our Express backend server), and Port `5432` (our database server).
-- **The Consequence:** While Port 3000 is supposed to be open so users can view the website, leaving our raw backend
-and database ports open to the public internet allows anyone to bypass our security guards and connect directly to
-  the raw data servers.
+-   **What I found:** The scan showed that three doors are wide open: Port `3000` (our main web server),
+    Port `5000` (our Express backend server), and Port `5432` (our database server).
+-   **The Consequence:** While Port 3000 is supposed to be open so users can view the website, leaving our raw backend
+    and database ports open to the public internet allows anyone to bypass our security guards and connect directly to
+    the raw data servers.
 
 ```text
 PORT     STATE SERVICE    VERSION
@@ -156,27 +156,28 @@ PORT     STATE SERVICE    VERSION
 I downloaded a Metasploit wordlist used a tool called **Dirb** to automatically guess thousands of common folder and
 pathway names against the web server to see if any hidden files are accidentally left public.
 
-- **What we found:** Dirb successfully discovered the unauthenticated diagnostic path: `/health`
-- **The Consequence:** Exposing a raw `/health` path without requiring a login allows any random internet user to
-  look at the internal system health metrics and plan a deeper attack.
+-   **What we found:** Dirb successfully discovered the unauthenticated diagnostic path: `/health`
+-   **The Consequence:** Exposing a raw `/health` path without requiring a login allows any random internet user to
+    look at the internal system health metrics and plan a deeper attack.
 
 #### Step 3: Sniffing Network Traffic (The Wireshark Attack)
 I launched **Wireshark**, a standard network capture utility that records all data packets travelling through
 the network. We monitored the traffic while a test user logged into the portal.
 
-- **What we found:** Wireshark intercepted the network packet and instantly printed the raw login details in plain text:
+-   **What we found:** Wireshark intercepted the network packet and instantly printed the raw login details in
+    plaintext:
     ```json
     {"username": "user", "password": "password123"}
     ```
-- **The Consequence:** This is a high-risk vulnerability. Because the current website runs on standard,
-  unencrypted `http://` instead of secure `https://`, every password moves across the network in plaintext.
-  If an attacker gets onto the same local network (like a shared office network or a public wifi hotspot)
-  or if an insider threat monitors our traffic, they can steal user passwords instantly.
+-   **The Consequence:** This is a high-risk vulnerability. Because the current website runs on standard,
+    unencrypted `http://` instead of secure `https://`, every password moves across the network in plaintext.
+    If an attacker gets onto the same local network (like a shared office network or a public wifi hotspot)
+    or if an insider threat monitors our traffic, they can steal user passwords instantly.
 
 #### The Takeaway:
 This highlights the vast gulf between defensive software coding and secure operational deployment. While our
 source code successfully neutralises application-layer exploits (SQL injection and XSS),
-the infrastructure orchestration introduces fatal entry points, allowing attackers to target raw backend servers and
+the infrastructure orchestration introduces fatal entry points, allowing attackers to target backend servers and
 databases directly.
 
 ---
