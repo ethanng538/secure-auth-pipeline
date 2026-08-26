@@ -67,8 +67,7 @@ services:
       - pipeline-testing
     volumes:
       - .:/zap/wrk/:rw
-    entrypoint: [ "zap-baseline.py" ]
-
+    entrypoint: [ "zap.sh" ]
     command: [
       "-t", "https://secure_frontend:443",
       "-z", "-config connection.ssl.signed=false",

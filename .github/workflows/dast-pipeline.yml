@@ -52,7 +52,9 @@ jobs:
 
       - name: Execute automated dynamic vulnerability scan
         run: |
-          ZAP_UID=$(id -u) ZAP_GID=$(id -g) docker compose --profile pipeline-testing run --rm zap-scanner
+          export ZAP_UID=$(id -u)
+          export ZAP_GID=$(id -g)
+          docker compose --profile pipeline-testing run --rm zap-scanner
 
       - name: Teardown execution stack
         if: always()
