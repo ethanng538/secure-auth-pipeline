@@ -23,6 +23,7 @@ for CONTAINER_ID in $CONTAINERS; do
     echo "External reconnaissance tools can locate these backend components, completely bypassing edge reverse proxy access controls."
     echo ""
     echo "Remediation: Remove the 'ports' block definition from the '$CONTAINER_NAME' service in the root docker-compose.yml file."
+    echo ""
     PERIMETER_BREACHED=1
   fi
 
@@ -37,6 +38,7 @@ for CONTAINER_ID in $CONTAINERS; do
       echo "This open network backdoor bypasses perimeter security guardrails and exposes the application's underlying ecosystem directly to the host network interface."
       echo ""
       echo "Remediation: Confine service communications exclusively to isolated virtual bridge networks by stripping public port maps."
+      echo ""
       PERIMETER_BREACHED=1
     fi
   done

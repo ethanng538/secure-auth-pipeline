@@ -1,4 +1,4 @@
-name: "Phase 2: Automated SAST Guardrails"
+name: "Automated SAST guardrails"
 
 on:
   push:
@@ -11,7 +11,6 @@ permissions:
 
 jobs:
   sast-scan:
-    name: Semgrep AST syntax analysis
     runs-on: ubuntu-latest
 
     steps:

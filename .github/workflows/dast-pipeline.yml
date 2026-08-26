@@ -1,4 +1,4 @@
-name: "Phase 4: Automated DAST Guardrails"
+name: "Automated DAST guardrails"
 
 on:
   push:
@@ -8,7 +8,6 @@ on:
 
 jobs:
   dast-scan:
-    name: Core Environmental Security Audit
     runs-on: ubuntu-latest
 
     steps:
@@ -30,9 +29,13 @@ jobs:
           FAILED=1
           fi
           
-          echo ""
           echo "=== 🔍 Starting transport encryption sweep ==="
           if ! bash .github/security-utils/verify-transport-encryption.sh; then
+          FAILED=1
+          fi
+          
+          echo "=== 🔍 Starting rate limiting sweep ==="
+          if ! bash .github/security-utils/verify-rate-limiting.sh; then
           FAILED=1
           fi
           

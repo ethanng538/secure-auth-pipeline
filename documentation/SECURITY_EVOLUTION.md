@@ -34,8 +34,8 @@ the **GitHub Actions workflow** utilising **Semgrep**. This tool acts as an auto
 the structure of my source code on every push. Its purpose is to act as a preventative guardrail, ensuring any
 future updates or feature branches are automatically checked for structural risks before they can be merged.
 
-### The Pipeline Results
-Upon pushing the initial baseline code, the pipeline instantly halted execution, reporting
+### The SAST Pipeline Results
+Upon pushing the initial baseline code, the pipeline halted execution, reporting
 **4 blocking findings** across the active authentication routes.
 
 ![Semgrep pipeline results](images/semgrep-results.png)
@@ -184,4 +184,42 @@ databases directly.
 
 ## 📍 Phase 4: Runtime Operational Validation
 
-To be added.
+### The Strategy
+
+Phase 3 used an offensive attacker mindset to discover exposed network backdoors. Phase 4 builds those discoveries into
+my continuous engineering defences.
+
+To catch environment flaws early, I integrated an automated DAST (Dynamic Application Security Testing) layer into
+the workflow execution stack. Rather than leaving network-layer vulnerabilities unmonitored until a
+formal penetration test or manual audit occurs, this pipeline builds a permanent programmatic safety net.
+It automatically launches the environment, waits for a healthy state and inspects the system boundaries before
+any code can deploy.
+
+### The DAST Pipeline Results
+With the current vulnerabilities identified the pipeline halted,
+
+### Designing Future-Proof Guardrails
+Recall the issue with overfitting when the SAST rules were first designed. If the testing scripts were hardcoded to
+look strictly for ports 5000 and 5432, or forced them to scan an exact address like http://localhost:3000,
+the pipeline would eventually break down as our architecture scaled.
+
+To build a resilient testing gate, I designed the security utilities to use a dynamic, declarative model that queries
+the Docker Runtime Daemon:
+
+```text
+                               ┌───► [ Query Image Metadata ] ───► Auto-discover all exposed ports ───► Test host loopback
+                               │
+[ Trigger DAST Pipeline Sweep ]┤
+                               │
+                               └───► [ Query Live Gateway ] ────► Resolve bound Nginx port ─────────► Test encryption headers
+```
+
+#### How the Automated Gate Evaluates Infrastructure:
+1. **Dynamic Port Harvesting:** Instead of checking fixed port lists, the perimeter script reads
+   container metadata at runtime. If a developer maps a new database or microservice and accidentally exposes it,
+   the script dynamically discovers the port and audits the connection.
+2. **Adaptive Endpoint Targeting:** The transport script queries Docker to identify exactly which external port
+   the Nginx front door is listening on. It automatically targets its connection checks whether it is evaluating
+   HTTP staging environments or active HTTPS encryption rules.
+3. **Cumulative Log Gathering:** Individual scripts process security errors silently without
+   throwing early exit crashes. This ensures all vulnerabilities that caused the pipeline to fail are shown.
