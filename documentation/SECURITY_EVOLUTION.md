@@ -184,38 +184,37 @@ databases directly.
 ## 📍 Phase 4: Runtime Operational Validation
 
 ### The Strategy
+Manually breaking into the application with Kali was an eye-opener: it demonstrated that solid code doesn't mean much if
+the infrastructure around it isn't buttoned up. This phase is all about translating those hands-on discoveries into a
+continuous, automated verification layer.
 
-Phase 3 used an offensive attacker mindset to discover exposed network backdoors. Phase 4 builds those discoveries into
-my continuous engineering defences.
-
-To catch environment flaws early, I integrated an automated DAST (Dynamic Application Security Testing) layer into
-the workflow execution stack. Rather than leaving network-layer vulnerabilities unmonitored until a
-formal penetration test or manual audit occurs, this pipeline builds a permanent programmatic safety net.
-It automatically launches the environment, waits for a healthy state and inspects the system boundaries before
-any code can deploy.
+Instead of treating runtime security as a one-time audit or a checklist item, I wanted to build a dynamic safety net
+right into the development loop. By integrating a Dynamic Application Security Testing (DAST) layer, the pipeline now
+boots up the environment and actively inspects its own perimeters on every run, turning our manual attack notes into
+automated guardrails.
 
 ### Designing Future-Proof Guardrails
 Recall the issue with overfitting when the SAST rules were first designed. If the testing scripts were hardcoded to
 look strictly for ports 5000 and 5432, or forced them to scan an exact address like http://localhost:3000,
-the pipeline would eventually break down as our architecture scaled.
+the pipeline would eventually break down as the architecture scaled.
 
-To build a resilient testing gate, I designed the security utilities to use a dynamic, declarative model that queries
+To build a resilient testing gate, I designed the security utilities to use a dynamic model that queries
 the Docker Runtime Daemon:
 
 ```text
-                               ┌───► [ Query Image Metadata ] ───► Auto-discover all exposed ports ───► Test host loopback
+                               ┌───► [ Dynamic Port Inspecting ] ────► Scan for unauthorised host exposures (5000/5432)
                                │
 [ Trigger DAST Pipeline Sweep ]┤
                                │
-                               └───► [ Query Live Gateway ] ────► Resolve bound Nginx port ─────────► Test encryption headers
+                               └───► [ Adaptive Endpoint Targeting ] ─► Target active Nginx public interface to test security headers
 ```
 
 #### How the Automated Gate Evaluates Infrastructure:
-1. **Dynamic Port Harvesting:** The suite inspects container metadata at runtime. If a developer accidentally exposes
-   a backend or database port to the host interface, the script flags it automatically.
-2. **Adaptive Endpoint Targeting:** The transport script queries Docker to identify exactly which external port
-   the Nginx front door is listening on. It automatically targets its connection checks whether it is evaluating
-   HTTP staging environments or active HTTPS encryption rules.
+1. **Dynamic Port Inspecting:** The suite inspects container port bindings at runtime. If a developer accidentally
+   exposes a backend or database port directly to the host interface, the script automatically flags it.
+2. **Adaptive Endpoint Targeting:** The transport encryption verification script queries Docker to isolate the
+   exact external port bound to Nginx. It automatically targets this endpoint to verify that connection requests
+   safely upgrade to HTTPS and return the correct security headers.
 3. **Cumulative Log Gathering:** Individual scripts process security errors silently without
    throwing early exit crashes. This ensures all vulnerabilities that caused the pipeline to fail are shown.
 
@@ -256,7 +255,7 @@ PORT     STATE    SERVICE    VERSION
 ```
 
 This suggested that there was a dangerous false negative inside my automated DAST suite. The script reported
-the boundary was secure, yet an attacking OS could see the data layer.
+the boundary was secure yet an attacking OS could see the data layer.
 
 This friction forced a critical moment of self-education regarding network isolation and the necessity of
 thorough multi-layered validation:
@@ -271,54 +270,52 @@ thorough multi-layered validation:
     5432/tcp filtered postgresql
     ```
 
-2. **The Discovery:** This taught me how virtualisation platforms interact at the kernel layer. When Docker establishes
-   a virtual bridge network, it lives natively on the host operating system kernel. Since VirtualBox also binds its
-   host-only or bridged adapters to that same kernel, the host machine quietly routes traffic internally between
-   the local VM and the local Docker network, bypassing external firewall realities.
-3. **The Engineering Takeaway:** The DAST pipeline script was operating with accuracy for its target deployment context.
-   However, relying blindly on a single testing vantage point is dangerous. True security engineering requires
-   verifying results outside of local hypervisor bubbles before writing off a validation failure.
+2. **The Discovery:** Researching how hypervisors interact at the system level revealed a localised routing overlap.
+   When Docker establishes a virtual bridge network, it lives natively inside the host operating system kernel. Since
+   VirtualBox binds its host-only or bridged adapters to that same kernel, the host machine quietly routes traffic
+   internally between the Kali VM and the local Docker interface, bypassing external firewall realities.
+3. **The Engineering Takeaway:** The DAST pipeline script was correct in its assertion that the backend ports were
+   isolated from external network interfaces and the apparent exposure was simply an artefact of the hypervisor's
+   internal routing. However, this experience taught me the importance of network vantage points and the requirement for
+   rigorous validation.
 
 #### Protecting against denial-of-service (DoS) attacks
-The automated DAST scan pointed out that the `/api/login` and `/api/register` had no restriction on request frequency.
+The automated DAST scan pointed out that the authentication endpoints had no restriction on request frequency.
 This meant an attacker could easily run an automated password-guessing script
 (a brute-force attack) or spam the system until the application crashed entirely.
 
-To fix this, I updated the Nginx reverse proxy configuration to include a traffic throttle. By creating a
-shared memory area, Nginx now tracks incoming request frequencies based on
-the visitor's IP address.
+To fix this, I updated the Nginx configuration to enforce a traffic throttle. By establishing dedicated memory zones,
+Nginx tracks request frequencies mapped directly to the client's IP address.
 
-I applied a strict rule to the authentication routes: users are allowed a steady baseline of 5 requests per second,
-with a small "burst" buffer of 10 requests to handle normal, fast page clicks and internet realities
-(like a browser sending multiple requests at the exact same millisecond). If a script tries to bypass these rules and
+I applied a strict rule to the authentication routes: users are allowed a baseline of 5 requests per second,
+with a small "burst" buffer of 10 requests to accommodate for legitimate, rapid user actions and internet realities
+(like a browser sending multiple requests at the exact same millisecond). If an attacker tries to bypass these rules and
 floods the authentication endpoints, Nginx steps in immediately, cuts off the traffic and returns a
-clean `HTTP 429 Too Many Requests` error before the spam can ever touch or slow down the backend server.
+clean `HTTP 429 Too Many Requests` error before the spam can slow down the server.
 
 #### Implementing transport-level encryption
-The final automated security sweep flagged a severe configuration issue: the front-door gateway allowed
-unencrypted web traffic and completely lacked a Strict-Transport-Security (HSTS) header. This exposed
-user authentication sessions directly to network data interception attacks (CWE-319).
+The automated DAST scan identified that the frontend gateway permitted unencrypted web traffic, exposing user passwords
+to data interception over public networks (CWE-319).
 
-To fix this, we updated three core areas:
--   **Staging Certificates:** I updated the frontend Dockerfile to generate a temporary security certificate directly
+To resolve this exposure, I refactored the infrastructure across three key layers:
+-   **Staging Certificates:** I updated the frontend Dockerfile to generate a self-signed security certificate directly
     inside the container during the build phase.
--   **Split Gateway Model:** I divided nginx.conf into two separate blocks. Port 80 serves no data and instantly
-    redirects users to HTTPS (HTTP 301). Port 443 terminates the secure connection and injects the HSTS header to
-    block future unencrypted attempts.
+-   **Split Gateway Model:** I re-configured Nginx to have dual server blocks. Port `80` acts as a dedicated routing gate
+    that forces a global upgrade to HTTPS. Meanwhile, port `443` handles the secure connection, safely unwrapping
+    the encrypted traffic and injecting an automatic HTTPS upgrade policy (`Strict-Transport-Security`) to inform
+    the browser that the host should only be accessed using HTTPS.
 -   **Dual Ingress:** I updated the root Docker configuration file to expose both standard web traffic and
-    secure pathways (3000:80 and 3443:443).
+    secure pathways (`3000:80` and `3443:443`).
 
-Since the system now exposes two host ports, the automated test script was refactored to prevent false alarms.
-It now audits each entry point independently:
--   **Step 1 (Entrance Check):** Hits port 3000 to ensure the server immediately forces a secure upgrade and
-    links directly to a https:// web address.
--   **Step 2 (Landing Zone Check):** Hits port 3443 to verify the secure page responds cleanly without crashing
-    (CWE-755) and actively delivers the HSTS safety token. 
+Since the system now exposes two host ports, the transport encryption verification script was also refactored to prevent
+false alarms. It now audits each entry point independently:
+-   **Step 1 (Entrance Check):** Probe port `3000` to ensure the server immediately forces a secure upgrade and
+    links directly to a `https://` web address.
+-   **Step 2 (Landing Zone Check):** Probe port `3443` to verify the secure landing zone responds cleanly (CWE-755) and
+    actively delivers the HTTPS upgrade policy.
 
-This decoupled architecture allows the deployment pipeline to pass cleanly while providing clear troubleshooting logs
-if the port configurations ever drift.
-
-Testing with Wireshark indicated packets were successfully encrypted.
+Following remediation, a network packet analysis via Wireshark confirmed that all application-layer payloads were
+entirely encrypted into unreadable ciphertext.
 
 ## Reflection
 To be added.
