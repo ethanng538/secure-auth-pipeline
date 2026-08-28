@@ -35,9 +35,12 @@
   (Nmap, Dirb, Wireshark) to evaluate the attack surface and find vulnerabilities.
 
 ### 📍 Phase 4: Runtime Operational Validation (DAST Evolution)
--   **Objective:** Use the data gathered from active exploitation to create a future-looking DAST pipeline.
--   **The Defence:** Patching port misconfigurations and adding transport-level encryption, confirming the
-    fixes survive both the automated pipeline scans and live penetration testing.
+-   **Objective:** Translate findings from active exploitation into automated runtime guardrails, engineering a
+    resilient network perimeter and traffic throttling system.
+-   **The Guardrail:** Extended the existing GitHub Actions pipeline by incorporating custom Docker-native validation
+    utilities paired with the **OWASP ZAP Automation Framework**.
+-   **The Result:** The automated checks dynamically block exposed backend ports, verify protection against brute-force
+    vectors and enforce secure, encrypted web connections to protect credentials in transit.
 
 ---
 

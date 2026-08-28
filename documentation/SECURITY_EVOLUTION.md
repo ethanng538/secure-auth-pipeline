@@ -224,17 +224,42 @@ and unencrypted web traffic.
 
 ![DAST pipeline results](images/dast-results.png)
 
-### Cascading Warning Loops & Policy Tuning
-Plugging OWASP ZAP into a CI/CD pipeline reveals a major security engineering challenge:
-cascading vulnerability warnings. Default security scanners apply rigid, generic rulesets. If an engineer tries to
-patch every warning blindly, they get stuck in an endless loop of fixing one alert only to trigger secondary ones.
-Managing this noise requires clear scoping and early policy triage.
+### ZAP Policy Tuning
+As part of my DAST strategy, I also integrated OWASP ZAP into the pipeline.
 
--   The Ingress Disconnect: Our initial raw ZAP baseline scan failed the build by flagging missing headers across the app (like Rule 10038 for CSP, 10020 for Anti-clickjacking, and 10021 for X-Content-Type-Options). We reacted by adding security middleware to our Express backend (server.js).
--   The Architectural Reality: The next pipeline run failed anyway. This exposed a major gap: while our Express code covered dynamic paths (like /api/login), our static frontend assets (favicon.svg, robots.txt, CSS, and JS files) are served directly at the front door by Nginx. They completely bypassed our Node runtime, arriving at the scanner unprotected.
--   Scanner Over-Sensitivity vs. Production Realities: When we duplicated the essential security headers into nginx.conf using the always directive, ZAP instantly triggered a massive cascade of new warnings. It flagged rules like 10055 (CSP Fallback) because our policy allowed 'unsafe-inline', and 90004 (COEP Missing). However, modern frameworks like React require inline style injections to handle compilation chunks mid-flight. Forcing a developer to re-engineer standard frontend bundling simply to satisfy an inflexible scanner ruleset wastes valuable engineering cycles.
--   Triage and Policy Scoping: Real-world vulnerability management means separating critical threats from noise. Low-priority environmental alerts—such as cache-control directives on public assets (10015, 10049), missing permissions policies on a login loop (10063), or informational framework tags (10109)—do not represent active compromise vectors.
--   Strategic Mitigation: We accepted these risks by converting our ZAP configuration into a tuned baseline profile. We utilized ZAP's security-as-code ledger (zap-rules.conf) to explicitly change these specific rules to IGNORE. This keeps our pipeline gate green while documenting our intentional, justified architectural trade-offs directly in our Git repository history.
+![ZAP results](images/zap-results.png)
+
+Instead of blindly chasing every alert thrown by the automated scanner, I mapped the tool's findings directly against
+the active boundaries of my system. By researching the specific vulnerability documentation behind each alert, I
+evaluated which vulnerabilities posed an authentic threat to my code and infrastructure and separated the noise from
+genuine exposure.
+
+```text
+                               ┌───► [ Irrelevant Noise ] ─────────► Static asset caching & hardware APIs that the code doesn't touch
+                               │
+[ Automated OWASP ZAP Engine ]─┤
+                               │
+                               └───► [ Relevant Security Gaps ] ───► Missing security headers that expose users to exploits
+```
+
+I built a custom ZAP rules configuration to silence alerts that had no real attack surface, like static file caching,
+hardware APIs the code never calls and security rules meant for third-party websites. This kept the pipeline clean and
+allowed me to focus engineering effort strictly on the gaps that put the environment at risk.
+
+My research singled out three specific vulnerabilities that directly exposed my frontend to
+legitimate attacks:
+```text
+Missing Anti-clickjacking Header [10020]
+X-Content-Type-Options Header Missing [10021]
+Content Security Policy (CSP) Header Not Set [10038]
+```
+
+To remediate these vulnerabilities, I injected the necessary security headers in both the backend server and the
+Nginx configuration file. Enforcing these directives through the Nginx reverse proxy and the backend server ensures
+the client browser is strictly mandated to block UI-overlay hijacking, stop running files that don't match their
+declared format and block unapproved scripts from execution.
+
+![ZAP results after patches](images/zap-results-post-patch.png)
 
 ### Infrastructure Remediation
 #### Reducing the Attack Surface
@@ -295,7 +320,7 @@ clean `HTTP 429 Too Many Requests` error before the spam can slow down the serve
 
 #### Implementing transport-level encryption
 The automated DAST scan identified that the frontend gateway permitted unencrypted web traffic, exposing user passwords
-to data interception over public networks (CWE-319).
+to data interception over public networks (`CWE-319`).
 
 To resolve this exposure, I refactored the infrastructure across three key layers:
 -   **Staging Certificates:** I updated the frontend Dockerfile to generate a self-signed security certificate directly
@@ -311,11 +336,13 @@ Since the system now exposes two host ports, the transport encryption verificati
 false alarms. It now audits each entry point independently:
 -   **Step 1 (Entrance Check):** Probe port `3000` to ensure the server immediately forces a secure upgrade and
     links directly to a `https://` web address.
--   **Step 2 (Landing Zone Check):** Probe port `3443` to verify the secure landing zone responds cleanly (CWE-755) and
-    actively delivers the HTTPS upgrade policy.
+-   **Step 2 (Landing Zone Check):** Probe port `3443` to verify the secure landing zone responds cleanly (`CWE-755`)
+-   and actively delivers the HTTPS upgrade policy.
 
 Following remediation, a network packet analysis via Wireshark confirmed that all application-layer payloads were
 entirely encrypted into unreadable ciphertext.
+
+![DAST pipeline results after patches](images/dast-results-post-patch.png)
 
 ## Reflection
 To be added.

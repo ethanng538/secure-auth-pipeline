@@ -55,7 +55,7 @@ jobs:
           exit 1
           fi
 
-      - name: Execute automated dynamic vulnerability scan
+      - name: Run OWASP ZAP baseline scanner
         uses: zaproxy/action-baseline@v0.15.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
