@@ -36,7 +36,7 @@ services:
     container_name: secure_backend
     restart: always
     environment:
-      DB_HOST: postgres-db
+      DB_HOST: secure_postgres
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
       DB_NAME: ${DB_NAME}

@@ -2,7 +2,7 @@
 
 > ### 📢 The Self-Directed Learning Journey
 > This repository documents a hands-on learning project engineered to practicalise application security concepts.
-> Instead of just reading theory, I built a standard authentication page and systematically moved it through a 
+> Going beyond theory, I built a standard authentication page and systematically moved it through a 
 > **four-phase security lifecycle**: writing the initial code, integrating automated source-code gates (SAST),
 > simulating real-world attacks via Kali Linux and validating runtime defences (DAST).
 
@@ -23,7 +23,7 @@
 
 ### 📍 Phase 2: Shifting Security Left (Automated SAST Guardrails)
 -   **Objective:** Implement automated static scanning to see how modern development teams catch
-    low-hanging fruit before deployment.
+    low-hanging fruit before deployment and embed automated guardrails into future development.
 -   **The Guardrail:** Integrated a **GitHub Actions pipeline** utilising the
     **Semgrep AST (Abstract Syntax Tree) engine**.
 -   **The Result:** The pipeline successfully scans the repository on every push, automatically identifying and
@@ -35,7 +35,7 @@
   (Nmap, Dirb, Wireshark) to evaluate the attack surface and find vulnerabilities.
 
 ### 📍 Phase 4: Runtime Operational Validation (DAST Evolution)
--   **Objective:** Use the data gathered from active exploitation to create a future-looking DAST pipeline
+-   **Objective:** Use the data gathered from active exploitation to create a future-looking DAST pipeline.
 -   **The Defence:** Patching port misconfigurations and adding transport-level encryption, confirming the
     fixes survive both the automated pipeline scans and live penetration testing.
 
@@ -43,8 +43,8 @@
 
 ## 🏢 System & Network Architecture
 
-This application simulates a standard authentication workflow, entirely containerised and split into
-isolated virtual routing zones to enforce a strict **Defence-in-Depth** model:
+This application simulates a standard authentication workflow. It is entirely containerised and split into
+isolated virtual routing zones to enforce strict network segmentation and the principle of least privilege:
 
 ```text
   [ frontend-ui ]                  [ backend-api ]                  [ postgres-db ]
@@ -97,7 +97,7 @@ Ensure your host development machine has **Docker Desktop** installed and active
    docker compose up --build
    ```
 
-*   **Frontend UI Interface:** Accessible locally at `http://localhost:3000`
+*   **Frontend UI Interface:** Accessible locally at `https://localhost:3443`
 *   **Backend API Gateway:** Accessible locally at `http://localhost:5000`
 
 To tear down the environment and purge temporary storage networks cleanly, execute:

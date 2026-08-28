@@ -2,7 +2,7 @@
 
 This document serves as the chronological engineering ledger for this project. It details the step-by-step evolution of
 an authentication portal as it progresses through development, static analysis, active exploitation and
-eventual remediation.
+runtime protection.
 
 ---
 
@@ -54,7 +54,8 @@ Upon pushing the initial baseline code, the pipeline halted execution, reporting
 
 ### Static Remediation & The Overfitting Discovery
 To clear the blocking findings, I patched the vulnerabilities by implementing the following fixes:
-1. **Parameterised Queries:** Replaced dynamic string concatenation with native `node-postgres` array bindings (`$1, $2`) to neutralize SQL Injection.
+1. **Parameterised Queries:** Swapped dynamic string construction for pre-compiled parameters (`$1, $2`),
+   preventing user input from masquerading as executable SQL commands.
 2. **Hashing:** Implemented asynchronous `bcrypt` password stretching with a cost factor of `10` rounds.
 
 However, upon pushing the secure code, the SAST pipeline continued to fail, continuing to flag
@@ -72,23 +73,23 @@ Instead of policing how a developer formats their code, the security engine now 
 tracking the state of information as it flows through the system:
 
 ```text
-                  ┌───► [ Hashing Function ] ───► (Cleaned & Approved) ───► [ Safe Database Query ] (BUILD PASSES)
-                  │
-[ Raw User Input ]┤
- (Untrusted Data) │
-                  └───► [ Raw/Direct Path ] ────► (Unhashed Input) ────► [ Security System Blocks Deploy ]  (BUILD FAILS)
+                     ┌───► [ Hashing Function ] ───► (Dye Washed Away) ───► [ Safe Database Entry ]  (BUILD PASSES)
+                     │
+ [ Raw User Input ] ─┤
+(Injected with Dye)  │
+                     └───► [ Unsanitised Flow ] ───► (Dye Still Present) ─► [ Database Write Blocked ] (BUILD FAILS)
 ```
 
 #### How the Automated Gate Evaluates Code Now:
 1. **The Source:** Any input entering the application via an incoming web request is automatically flagged as
-   tainted (untrusted).
+   tainted (dyed/untrusted).
 2. **The Sanitiser:** If that untrusted information passes through an approved cryptographic hashing function,
    the system washes away the taint and marks the data as "safe".
 3. **The Sink:** The system continuously guards the database. If any data attempts to update a user registry without
    passing through the sanitiser first, the build is blocked.
 
-**The Result:** Refactoring to Taint Tracking permanently eliminated the false positives while ensuring
-all future feature branches are automatically protected against credential leaks.
+**The Result:** Refactoring to Taint Tracking permanently eliminated the false positives while establishing an
+automated guardrail that prevents the exposure of unscrambled passwords if the data tier is breached.
 
 ![Semgrep pipeline results after patches](images/semgrep-results-post-patch.png)
 
@@ -118,8 +119,7 @@ the Nginx configuration handles edge routing abstraction:
                              ▼                                                                   ▼
                  Static Web Content Request                                          Data Transaction Route (`/api/`)
                  Served directly from static build                                   Proxied via Docker Internal Bridge Network
-                                                                                     `proxy_pass http://backend-api:5000;`
-
+                                                                                     proxy_pass http://backend-api:5000;
 ```
 
 By presenting both the UI and the API under the exact same hostname and port context, we eliminate
@@ -127,15 +127,17 @@ client-side CORS issues and isolate the Express backend server from direct publi
 
 ### The Attack Sequence
 
-#### Step 1: Scanning for Open Doors (The Port Scan)
+#### Step 1: Scanning for Unlocked Doors (The Port Scan)
 An aggressive network reconnaissance scan was executed using `Nmap` from the attacking Kali Linux VM map
 active network listeners.
 
+-   **The Analogy:** Approaching a building and checking every single door and window to see which ones are
+    unlocked.
 -   **What I found:** The scan showed that three doors are wide open: Port `3000` (our main web server),
     Port `5000` (our Express backend server), and Port `5432` (our database server).
 -   **The Consequence:** While Port 3000 must be open so users can view the website, exposing ports 5000 and
     5432 bypasses the Nginx security perimeter entirely, allowing adversaries to interact with the backend API and
-    database directly
+    database directly.
 
     ```text
     PORT     STATE SERVICE    VERSION
@@ -148,31 +150,32 @@ active network listeners.
     5432/tcp open  postgresql PostgreSQL DB
     ```
 
-#### Step 2: Guessing Hidden Pathways (The Dirb Attack)
-I downloaded a Metasploit wordlist and used a tool called **Dirb** to automatically guess thousands of common folder and
-pathway names against the servers to see if any hidden files were accidentally left public.
+#### Step 2: Mapping Hidden Hallways (The Dirb Attack)
+An automated sweep was executed using Dirb paired with a common directory wordlist to discover hidden endpoint pathways.
 
--   **What we found:** Dirb successfully discovered the diagnostic path: `/health`
--   **The Consequence:** An attacker can bypass the Nginx proxy layer and scrape diagnostic metrics to plan a
-    deeper attack.
+-   **The Analogy:** Entering a public building and systematically testing every single unmarked door,
+    back staircase and service corridor to find restricted staff areas that the building operators forgot to lock.
+-   **What we found:** Dirb successfully exposed a hidden diagnostic: `/health`
+-   **The Consequence:**  By bypassing the public areas of the website, they can slip into internal utility corridors
+    where they can scrape diagnostic metrics and gather information to plan a deeper attack.
 
 #### Step 3: Sniffing Network Traffic (The Wireshark Attack)
 I launched **Wireshark**, a standard network capture utility that records all data packets travelling through
-the network. We monitored the traffic while a test user logged into the portal.
+the network. I monitored the traffic while entering test credentials into the portal.
 
+-   **The Analogy:** Looking over someone's shoulder while they type out their password. With no barrier blocking
+    your view, you can read every single character as it is entered.
 -   **What I found:** Wireshark intercepted the network packet and instantly printed the raw login details in
     plaintext:
     ```json
     {"username": "user", "password": "password123"}
     ```
--   **The Consequence:** This is a high-risk vulnerability. Because the current website runs on standard,
-    unencrypted `http://` instead of secure `https://`, every password moves across the network in plaintext.
-    If an attacker gets onto the same local network (like a shared office network or a public wifi hotspot)
-    or if an insider threat monitors our traffic, they can steal user passwords instantly.
+-   **The Consequence:** Because the current website uses unencrypted `http://`, passwords move
+    across the network in plaintext. Anyone sharing the same network can steal user passwords everytime someone logs in.
 
 #### The Takeaway:
-This highlights the vast gulf between defensive software coding and secure operational deployment. While our
-source code successfully neutralises application-layer exploits (SQL injection and XSS),
+Having defensive code but misconfigured infrastructure is like having a security shutters down on your storefront but
+leaving the yard door unlocked. While the source code successfully neutralises application-layer exploits,
 the infrastructure orchestration introduces fatal entry points, allowing attackers to target backend servers and
 databases directly.
 
@@ -221,6 +224,18 @@ With the current vulnerabilities identified, the pipeline halted, throwing expli
 and unencrypted web traffic.
 
 ![DAST pipeline results](images/dast-results.png)
+
+### Cascading Warning Loops & Policy Tuning
+Plugging OWASP ZAP into a CI/CD pipeline reveals a major security engineering challenge:
+cascading vulnerability warnings. Default security scanners apply rigid, generic rulesets. If an engineer tries to
+patch every warning blindly, they get stuck in an endless loop of fixing one alert only to trigger secondary ones.
+Managing this noise requires clear scoping and early policy triage.
+
+-   The Ingress Disconnect: Our initial raw ZAP baseline scan failed the build by flagging missing headers across the app (like Rule 10038 for CSP, 10020 for Anti-clickjacking, and 10021 for X-Content-Type-Options). We reacted by adding security middleware to our Express backend (server.js).
+-   The Architectural Reality: The next pipeline run failed anyway. This exposed a major gap: while our Express code covered dynamic paths (like /api/login), our static frontend assets (favicon.svg, robots.txt, CSS, and JS files) are served directly at the front door by Nginx. They completely bypassed our Node runtime, arriving at the scanner unprotected.
+-   Scanner Over-Sensitivity vs. Production Realities: When we duplicated the essential security headers into nginx.conf using the always directive, ZAP instantly triggered a massive cascade of new warnings. It flagged rules like 10055 (CSP Fallback) because our policy allowed 'unsafe-inline', and 90004 (COEP Missing). However, modern frameworks like React require inline style injections to handle compilation chunks mid-flight. Forcing a developer to re-engineer standard frontend bundling simply to satisfy an inflexible scanner ruleset wastes valuable engineering cycles.
+-   Triage and Policy Scoping: Real-world vulnerability management means separating critical threats from noise. Low-priority environmental alerts—such as cache-control directives on public assets (10015, 10049), missing permissions policies on a login loop (10063), or informational framework tags (10109)—do not represent active compromise vectors.
+-   Strategic Mitigation: We accepted these risks by converting our ZAP configuration into a tuned baseline profile. We utilized ZAP's security-as-code ledger (zap-rules.conf) to explicitly change these specific rules to IGNORE. This keeps our pipeline gate green while documenting our intentional, justified architectural trade-offs directly in our Git repository history.
 
 ### Infrastructure Remediation
 #### Reducing the Attack Surface
