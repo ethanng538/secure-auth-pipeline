@@ -30,7 +30,7 @@ successfully register an account and log in with their created credentials.
 
 ### The Strategy
 To establish baseline visibility over code quality, an automated security gate was integrated into
-the **GitHub Actions workflow** utilising **Semgrep**. This tool acts as an automated code reviewer, analysing
+the **GitHub Actions workflow** via **Semgrep**. I use Semgrep to automatically review my code, analysing
 the structure of my source code on every push. Its purpose is to act as a preventative guardrail, ensuring any
 future updates or feature branches are automatically checked for structural risks before they can be merged.
 
@@ -58,15 +58,15 @@ To clear the blocking findings, I patched the vulnerabilities by implementing th
    preventing user input from masquerading as executable SQL commands.
 2. **Hashing:** Implemented asynchronous `bcrypt` password stretching with a cost factor of `10` rounds.
 
-However, upon pushing the secure code, the SAST pipeline continued to fail, continuing to flag
-the secure lines as vulnerabilities.
+However, upon pushing the secure code, the SAST pipeline continued to fail, continuing to flag patched code segments as
+vulnerabilities.
 
 #### The Root Cause
 The initial custom Semgrep rule relied on **Signature-Based Matching** (looking for strict text formatting patterns).
 The rule engine failed to recognise the secure patch and threw a false positive.
 
 #### The Rule Architecture Shift
-To build a resilient security gate, the rule was refactored away from rigid text matches toward a
+To make my security gate more resilient, the rule was refactored from rigid text matches toward a
 universal tracking model called **Dataflow Taint Tracking**.
 
 Instead of policing how a developer formats their code, the security engine now operates like a digital dye test,
@@ -98,9 +98,9 @@ automated guardrail that prevents the exposure of unscrambled passwords if the d
 ## 📍 Phase 3: Defensive Emulation (The Kali Offensive)
 
 ### The Objective
-To manually test the running application just like a real malicious actor would over the network. While my
-previous security checks (SAST) looked at the code files line-by-line, this phase looks at how the application behaves
-when it is turned on and plugged into the network.
+This phase adopts an attacker’s mindset to manually test the application's runtime behaviour. While the previous static
+checks (SAST) inspected the codebase line-by-line, this step shifts the focus to identifying hidden operational risks
+that only become visible once the system is active.
 
 ### The Edge Routing Hurdle 
 The application runs inside a containerised sandbox. The original frontend client code hardcoded backend data requests
@@ -113,13 +113,13 @@ was introduced. The frontend code was refactored to use environment-relative rou
 the Nginx configuration handles edge routing abstraction:
 
 ```text
-[ Internet User Browser ] ───► (Host Port 3000) ───► [ Nginx Server (frontend-ui) ]
+  [ Client Browser ] ───► (Host Port 3000) ───► [ Nginx Server (frontend-ui) ]
                                                                │
                              ┌─────────────────────────────────┴─────────────────────────────────┐
                              ▼                                                                   ▼
-                 Static Web Content Request                                          Data Transaction Route (/api/)
+                 Static Web Content Request                                          Data Transaction Route (/api)
                  Served directly from static build                                   Proxied via Docker Internal Bridge Network
-                                                                                     proxy_pass http://backend-api:5000;
+                                                                                     proxy_pass http://backend-api:5000;                                                                      proxy_pass http://backend-api:5000;
 ```
 
 By presenting both the UI and the API under the exact same hostname and port context, I eliminate
@@ -133,7 +133,7 @@ active network listeners.
 
 -   **The Analogy:** Approaching a building and checking every single door and window to see which ones are
     unlocked.
--   **What I found:** The scan showed that three doors are wide open: Port `3000` (the main web server),
+-   **What I found:** The scan showed that entrances were unlocked: Port `3000` (the main web server),
     Port `5000` (the Express backend server), and Port `5432` (the database server).
 -   **The Consequence:** While Port `3000` must be open so users can view the website, exposing ports `5000` and
     `5432` bypasses the Nginx security perimeter entirely, allowing adversaries to interact with the backend API and
@@ -184,9 +184,9 @@ databases directly.
 ## 📍 Phase 4: Runtime Operational Validation
 
 ### The Strategy
-Manually breaking into the application with Kali was an eye-opener: it demonstrated that solid code doesn't mean much if
-the infrastructure around it isn't buttoned up. This phase is all about translating those hands-on discoveries into a
-continuous, automated verification layer.
+Manually probing the running application with Kali highlighted a critical operational reality: robust application code
+means very little if the surrounding infrastructure is exposed. This phase is all about translating those
+hands-on discoveries into a continuous, automated verification layer.
 
 Instead of treating runtime security as a one-time audit or a checklist item, I wanted to build a dynamic safety net
 right into the development loop. By integrating a Dynamic Application Security Testing (DAST) layer, the pipeline now
@@ -220,7 +220,11 @@ the Docker Runtime Daemon:
 
 ### The DAST Pipeline Results
 With the current vulnerabilities identified, the pipeline halted, throwing explicit alerts regarding configuration flaws
-and unencrypted web traffic.
+and unencrypted web traffic. Although Semgrep cannot be used to audit a running environment, I kept the runtime alerts
+consistent with the earlier SAST phase by continuing to map all discoveries to clear CWE references.
+
+Crucially, rather than generating separate, repetitive warnings for every individual CWE, my custom scripts identify
+compounding issues and group them under a single explanation.
 
 ![DAST pipeline results](images/dast-results.png)
 
@@ -233,7 +237,10 @@ Exposure of Sensitive System Information to an Unauthorized Control Sphere (CWE-
 ```
 
 ### ZAP Policy Tuning
-As part of my DAST strategy, I also integrated OWASP ZAP into the pipeline.
+To evaluate the application-player exposures that custom shell scripts cannot easily reach, I also integrated the
+OWASP ZAP Automation Framework into the pipeline. While my custom sweeps focused heavily on
+infrastructure port isolation and traffic limits, ZAP complements my pipeline by verifying the application enforces the
+safety settings needed to protect users from browser-based attacks.
 
 ![ZAP results](images/zap-results.png)
 
@@ -313,7 +320,7 @@ thorough multi-layered validation:
    rigorous validation.
 
 #### Protecting against denial-of-service (DoS) attacks
-The automated DAST scan pointed out that the authentication endpoints had no restriction on request frequency.
+The automated DAST scan also pointed out that the authentication endpoints had no restriction on request frequency.
 This meant an attacker could easily run an automated password-guessing script
 (`CWE-307`) or spam the system until the application crashed entirely (`CWE-400`).
 
