@@ -50,11 +50,12 @@ This application simulates a standard authentication workflow. It is entirely co
 isolated virtual routing zones to enforce strict network segmentation and the principle of least privilege:
 
 ```text
-  [ frontend-ui ]                  [ backend-api ]                  [ postgres-db ]
- (Port 3000 -> 80)                 (Port 5000:5000)                (Internal Port 5432)
-         │                                │                                 │
-         └─── via frontend-api network ───┘                                 │
-                                          └─── via api-db network ──────────┘
+       [ frontend-ui ]                 [ backend-api ]                  [ postgres-db ]
+      (Port 3000 -> 80)             (Internal Port 5000)             (Internal Port 5432)
+      (Port 3443 -> 443)                     │                                 │
+              │                              │                                 │
+              └─── via frontend-api network ─┴┘                                │
+                                             └──────── via api-db network ─────┘
 ```
 
 👉 **To read my complete plain-English risk translations, active terminal attack payloads and phase-by-phase code logs,
@@ -101,7 +102,15 @@ Ensure your host development machine has **Docker Desktop** installed and active
    ```
 
 *   **Frontend UI Interface:** Accessible locally at `https://localhost:3443`
-*   **Backend API Gateway:** Accessible locally at `http://localhost:5000`
+
+#### ⚠️ A Note on Local HTTPS (Browser Warnings)
+Since this lab uses locally generated self-signed certificates to demonstrate transit encryption without a paid domain,
+your web browser will throw a standard security warning when you visit `https://localhost:3443`.
+
+-   **Why this happens:** Browsers naturally alert you when a certificate isn't signed by a public
+    Certificate Authority.
+-   **How to proceed:** This is expected behaviour for an isolated local environment. You can safely bypass the warning
+    by clicking "Advanced" and selecting "Continue" (or words to that effect) to see the application in action.
 
 To tear down the environment and purge temporary storage networks cleanly, execute:
 ```bash
