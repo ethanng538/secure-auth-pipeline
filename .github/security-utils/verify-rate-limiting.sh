@@ -1,4 +1,5 @@
 echo "Verifying brute-force rate limiting compliance across identity endpoints..."
+echo ""
 RATE_LIMIT_BREACHED=0
 
 # Dynamic port resolution queries

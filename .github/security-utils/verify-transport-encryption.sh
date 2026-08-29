@@ -1,4 +1,5 @@
 echo "Verifying transport layer encryption compliance..."
+echo ""
 
 # Targets the discrete public host mappings assigned to internal container gateways
 HTTP_PORT=$(docker port secure_frontend 80 2>/dev/null | head -n 1 | awk -F ':' '{print $NF}' | tr -d '\r')

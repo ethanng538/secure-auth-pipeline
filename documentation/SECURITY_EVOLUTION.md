@@ -224,6 +224,13 @@ and unencrypted web traffic.
 
 ![DAST pipeline results](images/dast-results.png)
 
+```text
+Exposure of Sensitive Information to an Unauthorized Actor (CWE-200)
+Improper Restriction of Excessive Authentication Attempts (CWE-307)
+Cleartext Transmission of Sensitive Information (CWE-319)
+Exposure of Sensitive System Information to an Unauthorized Control Sphere (CWE-497)
+```
+
 ### ZAP Policy Tuning
 As part of my DAST strategy, I also integrated OWASP ZAP into the pipeline.
 
@@ -336,8 +343,8 @@ Since the system now exposes two host ports, the transport encryption verificati
 false alarms. It now audits each entry point independently:
 -   **Step 1 (Entrance Check):** Probe port `3000` to ensure the server immediately forces a secure upgrade and
     links directly to a `https://` web address.
--   **Step 2 (Landing Zone Check):** Probe port `3443` to verify the secure landing zone responds cleanly (`CWE-755`)
--   and actively delivers the HTTPS upgrade policy.
+-   **Step 2 (Landing Zone Check):** Probe port `3443` to verify the secure landing zone responds cleanly
+    and actively delivers the HTTPS upgrade policy.
 
 Following remediation, a network packet analysis via Wireshark confirmed that all application-layer payloads were
 entirely encrypted into unreadable ciphertext.

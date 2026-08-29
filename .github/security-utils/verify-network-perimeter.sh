@@ -1,4 +1,5 @@
 echo "Auditing environment network perimeter isolation boundaries..."
+echo ""
 PERIMETER_BREACHED=0
 
 # Fetch a collection of all running container IDs
