@@ -35,10 +35,8 @@ services:
     build: ./backend
     container_name: secure_backend
     restart: always
-    ports:
-      - "5000:5000"
     environment:
-      DB_HOST: postgres-db
+      DB_HOST: secure_postgres
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
       DB_NAME: ${DB_NAME}
@@ -56,5 +54,6 @@ services:
     restart: always
     ports:
       - "3000:80"
+      - "3443:443"
     networks:
       - frontend-api

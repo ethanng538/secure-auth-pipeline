@@ -1,0 +1,70 @@
+name: "Automated DAST guardrails"
+
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+    branches: [ main, dev ]
+
+jobs:
+  dast-scan:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      issues: write
+      security-events: write
+
+    env:
+      DB_USER: ${{ secrets.PIPELINE_DB_USER }}
+      DB_PASSWORD: ${{ secrets.PIPELINE_DB_PASSWORD }}
+      DB_NAME: ${{ secrets.PIPELINE_DB_NAME }}
+
+    steps:
+      - name: Ingest infrastructure files
+        uses: actions/checkout@v4
+
+      - name: Build and launch application environment
+        run: docker compose up --build -d
+
+      - name: Await system initialisation
+        run: bash .github/security-utils/await-health.sh
+
+      - name: Execute environment validation sweeps
+        run: |
+          FAILED=0
+          
+          echo "=== 🔍 Starting perimeter isolation sweep ==="
+          if ! bash .github/security-utils/verify-network-perimeter.sh; then
+          FAILED=1
+          fi
+          
+          echo "=== 🔍 Starting transport encryption sweep ==="
+          if ! bash .github/security-utils/verify-transport-encryption.sh; then
+          FAILED=1
+          fi
+          
+          echo "=== 🔍 Starting rate limiting sweep ==="
+          if ! bash .github/security-utils/verify-rate-limiting.sh; then
+          FAILED=1
+          fi
+          
+          if [ $FAILED -eq 1 ]; then
+          echo ""
+          echo "❌ Pipeline halted. Unresolved environmental vulnerabilities detected."
+          exit 1
+          fi
+
+      - name: Run OWASP ZAP baseline scanner
+        uses: zaproxy/action-baseline@v0.15.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          target: 'https://localhost:3443'
+          cmd_options: '-z "-config connection.ssl.signed=false"'
+          rules_file_name: '.github/security-rules/zap-rules.conf'
+          fail_action: true
+          allow_issue_writing: true
+
+      - name: Teardown execution stack
+        if: always()
+        run: docker compose down --volumes
