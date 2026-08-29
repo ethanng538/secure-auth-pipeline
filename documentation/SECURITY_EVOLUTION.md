@@ -104,7 +104,7 @@ when it is turned on and plugged into the network.
 
 ### The Edge Routing Hurdle 
 The application runs inside a containerised sandbox. The original frontend client code hardcoded backend data requests
-to http://localhost:5000. While this works on a local machine, launching the application over a
+to `http://localhost:5000`. While this works on a local machine, launching the application over a
 VirtualBox network bridge or external internet connection causes the web client to return internal server errors.
 
 ### Edge Proxy Architecture Implementation
@@ -117,12 +117,12 @@ the Nginx configuration handles edge routing abstraction:
                                                                │
                              ┌─────────────────────────────────┴─────────────────────────────────┐
                              ▼                                                                   ▼
-                 Static Web Content Request                                          Data Transaction Route (`/api/`)
+                 Static Web Content Request                                          Data Transaction Route (/api/)
                  Served directly from static build                                   Proxied via Docker Internal Bridge Network
                                                                                      proxy_pass http://backend-api:5000;
 ```
 
-By presenting both the UI and the API under the exact same hostname and port context, we eliminate
+By presenting both the UI and the API under the exact same hostname and port context, I eliminate
 client-side CORS issues and isolate the Express backend server from direct public exposure.
 
 ### The Attack Sequence
@@ -133,8 +133,8 @@ active network listeners.
 
 -   **The Analogy:** Approaching a building and checking every single door and window to see which ones are
     unlocked.
--   **What I found:** The scan showed that three doors are wide open: Port `3000` (our main web server),
-    Port `5000` (our Express backend server), and Port `5432` (our database server).
+-   **What I found:** The scan showed that three doors are wide open: Port `3000` (the main web server),
+    Port `5000` (the Express backend server), and Port `5432` (the database server).
 -   **The Consequence:** While Port 3000 must be open so users can view the website, exposing ports 5000 and
     5432 bypasses the Nginx security perimeter entirely, allowing adversaries to interact with the backend API and
     database directly.
@@ -190,7 +190,7 @@ continuous, automated verification layer.
 
 Instead of treating runtime security as a one-time audit or a checklist item, I wanted to build a dynamic safety net
 right into the development loop. By integrating a Dynamic Application Security Testing (DAST) layer, the pipeline now
-boots up the environment and actively inspects its own perimeters on every run, turning our manual attack notes into
+boots up the environment and actively inspects its own perimeters on every run, turning my manual attack notes into
 automated guardrails.
 
 ### Designing Future-Proof Guardrails
@@ -344,5 +344,19 @@ entirely encrypted into unreadable ciphertext.
 
 ![DAST pipeline results after patches](images/dast-results-post-patch.png)
 
-## Reflection
-To be added.
+## Project Retrospective
+Anyone faintly interested in cybersecurity can skim through standard literature and memorise that
+SAST tools struggle with structural nuances such as access control issues and insecure use of cryptography while DAST
+tools compensate by detecting live authentication flaws and server misconfigurations. However, learning theory is
+entirely different from manually breaking into your own environment and attempting to patch the cascade of
+vulnerabilities that follow one after the other.
+
+By engineering this project from a fragile baseline to a fully automated pipeline, I navigated the engineering realities
+that theory does not teach. I experienced exactly what difficulties engineers face when designing static safeguards
+(even when future features are planned out), how firewall realities could be bypassed from choosing a poor vantage
+point for testing and how baseline scanners can fill a pipeline with irrelevant warnings.
+
+Foundational knowledge provides the blueprint but building reveals the cracks. Moving this project from a fragile
+baseline to an automated lifecycle forced me to confront real system edge cases firsthand. Successfully navigating
+hypervisor quirks, optimising scanner rules and hardening network perimeters reinforced that building a secure system is
+a continuous cycle of breaking, learning and adapting to a landscape that never stops shifting.
