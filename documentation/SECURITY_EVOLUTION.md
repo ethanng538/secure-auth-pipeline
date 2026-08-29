@@ -228,6 +228,7 @@ and unencrypted web traffic.
 Exposure of Sensitive Information to an Unauthorized Actor (CWE-200)
 Improper Restriction of Excessive Authentication Attempts (CWE-307)
 Cleartext Transmission of Sensitive Information (CWE-319)
+Uncontrolled Resource Consumption (CWE-400)
 Exposure of Sensitive System Information to an Unauthorized Control Sphere (CWE-497)
 ```
 
@@ -314,7 +315,7 @@ thorough multi-layered validation:
 #### Protecting against denial-of-service (DoS) attacks
 The automated DAST scan pointed out that the authentication endpoints had no restriction on request frequency.
 This meant an attacker could easily run an automated password-guessing script
-(a brute-force attack) or spam the system until the application crashed entirely.
+(`CWE-307`) or spam the system until the application crashed entirely (`CWE-400`).
 
 To fix this, I updated the Nginx configuration to enforce a traffic throttle. By establishing dedicated memory zones,
 Nginx tracks request frequencies mapped directly to the client's IP address.
