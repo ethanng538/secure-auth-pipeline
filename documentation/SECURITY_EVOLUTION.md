@@ -271,9 +271,9 @@ declared format and block unapproved scripts from execution.
 
 ### Infrastructure Remediation
 #### Reducing the Attack Surface
-To shrink the network attack surface, I removed public port bindings for the API (`5000`) and database (`5432`) from
-the root Docker configuration file. After this was done, the DAST pipeline indicated that the network permimeter was
-isolated.
+To address information leaks (`CWE-200`) and hidden network topology exposure (`CWE-497`), I removed public
+port bindings for the API (`5000`) and database (`5432`) from the root Docker configuration file. After this was done,
+the DAST pipeline indicated that the network permimeter was isolated.
 
 However, during local integration verification, an unexpected security paradox appeared: running an `Nmap` scan from a
 Kali Linux VM hosted within VirtualBox flagged port `5432/tcp` (PostgreSQL) as open.
@@ -327,8 +327,8 @@ floods the authentication endpoints, Nginx steps in immediately, cuts off the tr
 clean `HTTP 429 Too Many Requests` error before the spam can slow down the server.
 
 #### Implementing transport-level encryption
-The automated DAST scan identified that the frontend gateway permitted unencrypted web traffic, exposing user passwords
-to data interception over public networks (`CWE-319`).
+The final runtime gap involved unencrypted web traffic, which exposes sensitive user credentials to data interception
+over shared networks (`CWE-319`).
 
 To resolve this exposure, I refactored the infrastructure across three key layers:
 -   **Staging Certificates:** I updated the frontend Dockerfile to generate a self-signed security certificate directly
