@@ -135,8 +135,8 @@ active network listeners.
     unlocked.
 -   **What I found:** The scan showed that three doors are wide open: Port `3000` (the main web server),
     Port `5000` (the Express backend server), and Port `5432` (the database server).
--   **The Consequence:** While Port 3000 must be open so users can view the website, exposing ports 5000 and
-    5432 bypasses the Nginx security perimeter entirely, allowing adversaries to interact with the backend API and
+-   **The Consequence:** While Port `3000` must be open so users can view the website, exposing ports `5000` and
+    `5432` bypasses the Nginx security perimeter entirely, allowing adversaries to interact with the backend API and
     database directly.
 
     ```text
@@ -195,7 +195,7 @@ automated guardrails.
 
 ### Designing Future-Proof Guardrails
 Recall the issue with overfitting when the SAST rules were first designed. If the testing scripts were hardcoded to
-look strictly for ports 5000 and 5432, or forced them to scan an exact address like http://localhost:3000,
+look strictly for ports `5000` and `5432`, or forced them to scan an exact address like `http://localhost:3000`,
 the pipeline would eventually break down as the architecture scaled.
 
 To build a resilient testing gate, I designed the security utilities to use a dynamic model that queries
