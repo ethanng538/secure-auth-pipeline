@@ -60,7 +60,8 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           target: 'https://localhost:3443'
-          cmd_options: '-z "-config connection.ssl.signed=false" -c .github/security-rules/zap-rules.conf'
+          cmd_options: '-z "-config connection.ssl.signed=false"'
+          rules_file_name: '.github/security-rules/zap-rules.conf'
           fail_action: true
           allow_issue_writing: true
 
