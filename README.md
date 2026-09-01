@@ -63,7 +63,7 @@ view the:** [Security Evolution Runbook](./documentation/SECURITY_EVOLUTION.md)
 
 ---
 
-## 🚀 One-Command Local Initialisation
+## 🚀 Local Initialisation
 
 Thanks to Docker orchestration, reviewers can spin up this entire multi-tier environment independently on any
 operating system without installing local database servers.
