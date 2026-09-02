@@ -1,7 +1,7 @@
 echo "Waiting for application to report healthy state..."
 for i in {1..30}; do
   if curl -skL https://localhost:3443/health | grep -q "healthy"; then
-    echo "✅ Secured edge architecture is online and reporting a healthy state."
+    echo "✅ Frontend UI proxy is online and reporting a healthy state."
     exit 0
   fi
   sleep 2
