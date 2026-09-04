@@ -59,7 +59,7 @@ isolated virtual routing zones to enforce strict network segmentation and the pr
 ```
 
 👉 **To read my complete plain-English risk translations, active terminal attack payloads and phase-by-phase code logs,
-view the:** [Security Evolution Runbook](./documentation/SECURITY_EVOLUTION.md)
+view the** [Security Evolution Runbook](./documentation/SECURITY_EVOLUTION.md).
 
 ---
 
@@ -69,21 +69,21 @@ Thanks to Docker orchestration, reviewers can spin up this entire multi-tier env
 operating system without installing local database servers.
 
 <details>
-<summary><b>🛠️ Click to expand Engineer-Facing Installation & Launch Instructions</b></summary>
+<summary><b>🛠️ Click to expand Installation & Launch Instructions</b></summary>
 
 ### Prerequisites
-Ensure your host development machine has **Docker Desktop** installed and actively running.
+Ensure your computer has [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and actively running.
 
 ### Initialisation Sequence
 
 1. **Clone the Project Workspace**
    ```bash
-   git clone <your-repository-url>
+   git clone https://github.com/ethanng538/secure-auth-pipeline.git
    cd secure-auth-pipeline
    ```
 
 2. **Supply Environmental Variables**\
-   Create a file named `.env` in the root directory (alongside `docker-compose.yml`) to define your local, non-secret container variables:
+   Create a file named `.env` in the root directory (alongside `docker-compose.yml`) to define your non-secret container variables:
    ```env
    DB_USER=admin_user
    DB_PASSWORD=super_secure_password
@@ -101,7 +101,7 @@ Ensure your host development machine has **Docker Desktop** installed and active
    docker compose up --build
    ```
 
-*   **Frontend UI Interface:** Accessible locally at `https://localhost:3443`
+*   **Frontend UI Interface:** Accessible at `https://localhost:3443`
 
 #### ⚠️ A Note on Local HTTPS (Browser Warnings)
 Since this lab uses locally generated self-signed certificates to demonstrate transit encryption without a paid domain,
