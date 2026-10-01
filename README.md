@@ -1,9 +1,9 @@
-# Full-Stack AppSec Lifecycle & Exploit Emulation Lab
+# Full-Stack AppSec & Exploit Emulation Lab
 
 > ### 📢 The Self-Directed Learning Journey
 > This repository documents a hands-on learning project engineered to practicalise application security concepts.
 > Going beyond theory, I built a standard authentication page and systematically moved it through a 
-> **four-phase security lifecycle**: writing the initial code, integrating automated source-code gates (SAST),
+> **four-phase security plan**: writing the initial code, integrating automated source-code gates (SAST),
 > simulating real-world attacks via Kali Linux and validating runtime defences (DAST).
 
 ***
