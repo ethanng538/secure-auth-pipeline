@@ -1,9 +1,9 @@
-# Full-Stack AppSec Lifecycle & Exploit Emulation Lab
+# Full-Stack AppSec & Exploit Emulation Lab
 
 > ### 📢 The Self-Directed Learning Journey
 > This repository documents a hands-on learning project engineered to practicalise application security concepts.
 > Going beyond theory, I built a standard authentication page and systematically moved it through a 
-> **four-phase security lifecycle**: writing the initial code, integrating automated source-code gates (SAST),
+> **four-phase security plan**: writing the initial code, integrating automated source-code gates (SAST),
 > simulating real-world attacks via Kali Linux and validating runtime defences (DAST).
 
 ***
@@ -46,8 +46,8 @@
 
 ## 🏢 System & Network Architecture
 
-This application simulates a standard authentication workflow. It is entirely containerised and split into
-isolated virtual routing zones to enforce strict network segmentation and the principle of least privilege:
+To support its authentication workflow, my application is entirely containerised and split into isolated
+virtual routing zones. This design enforces strict network segmentation and maintains the principle of least privilege:
 
 ```text
        [ frontend-ui ]                 [ backend-api ]                  [ postgres-db ]
@@ -58,7 +58,7 @@ isolated virtual routing zones to enforce strict network segmentation and the pr
                                              └──────── via api-db network ─────┘
 ```
 
-👉 **To read my complete plain-English risk translations, active terminal attack payloads and phase-by-phase code logs,
+👉 **To read my complete plain-English risk translations, adversarial probing and phase-by-phase code logs,
 view the** [Security Evolution Runbook](./documentation/SECURITY_EVOLUTION.md).
 
 ---
