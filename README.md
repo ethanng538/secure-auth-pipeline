@@ -44,7 +44,7 @@
 
 ---
 
-## 🏢 System & Network Architecture
+## 🛠️ System & Network Architecture
 
 To support its authentication workflow, my application is entirely containerised and split into isolated
 virtual routing zones. This design enforces strict network segmentation and maintains the principle of least privilege:
@@ -54,7 +54,7 @@ virtual routing zones. This design enforces strict network segmentation and main
       (Port 3000 -> 80)             (Internal Port 5000)             (Internal Port 5432)
       (Port 3443 -> 443)                     │                                 │
               │                              │                                 │
-              └─── via frontend-api network ─┴┘                                │
+              └─── via frontend-api network ─┘                                 │
                                              └──────── via api-db network ─────┘
 ```
 
