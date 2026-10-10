@@ -1,18 +1,18 @@
-# Full-Stack AppSec & Exploit Emulation Lab
+# Secure Auth & Adversarial Emulation Lab
 
 > ### 📢 The Self-Directed Learning Journey
 > This repository documents a hands-on learning project engineered to practicalise application security concepts.
 > Going beyond theory, I built a standard authentication page and systematically moved it through a 
 > **four-phase security plan**: writing the initial code, integrating automated source-code gates (SAST),
-> simulating real-world attacks via Kali Linux and validating runtime defences (DAST).
+> simulating real-world adversarial TTPs via Kali Linux and validating runtime defences (DAST).
 
-***
+---
 
 ## 🗺️ My Technical Evolution Roadmap
 
 ```text
 [Phase 1: Build Core App] ──> [Phase 2: Establish SAST] ──> [Phase 3: Kali Offensive] ──> [Phase 4: Implement DAST]
-   Basic Form Auth              Automated Pipeline Guard          Exposed Port Attacks           Active Runtime Defence
+     Basic Form Auth           Automated Pipeline Guard       Exposed Port Attacks         Active Runtime Defence
 ```
 
 ### 📍 Phase 1: The Functional Baseline (The Initial Login Page)
@@ -23,13 +23,13 @@
 
 ### 📍 Phase 2: Shifting Security Left (Automated SAST Guardrails)
 -   **Objective:** Implement automated static scanning to see how modern development teams catch
-    low-hanging fruit before deployment and embed automated guardrails into future development.
+    low-hanging fruit before deployment and embed guardrails into future development.
 -   **The Guardrail:** Integrated a **GitHub Actions pipeline** utilising the
     **Semgrep AST (Abstract Syntax Tree) engine**.
 -   **The Result:** The pipeline successfully scans the repository on every push, automatically identifying and
     blocking code containing the SQL injection (`CWE-89`) and plaintext storage (`CWE-256`) vulnerabilities.
 
-### 📍 Phase 3: Defensive Emulation (Attacking the Frontend via Kali Linux)
+### 📍 Phase 3: Offensive Emulation (Attacking the Frontend via Kali Linux)
 -   **Objective:** Go beyond source code scanning. Step into the shoes of an attacker to verify runtime weaknesses.
 -   **The Attack Vector:** Booting up an isolated local container and using **Kali Linux toolchains**
   (Nmap, Dirb, Wireshark) to evaluate the attack surface and find vulnerabilities.
@@ -51,7 +51,7 @@ virtual routing zones. This design enforces strict network segmentation and main
 
 ```text
        [ frontend-ui ]                 [ backend-api ]                  [ postgres-db ]
-      (Port 3000 -> 80)             (Internal Port 5000)             (Internal Port 5432)
+      (Port 3000 -> 80)              (Internal Port 5000)             (Internal Port 5432)
       (Port 3443 -> 443)                     │                                 │
               │                              │                                 │
               └─── via frontend-api network ─┘                                 │
