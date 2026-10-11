@@ -1,4 +1,4 @@
-# 📓 Security Evolution Runbook: The Full-Stack AppSec Journey
+# 📓 Security Evolution Runbook
 
 This document serves as the chronological engineering ledger for this project. It details the step-by-step evolution of
 an authentication portal as it progresses through development, static analysis, active exploitation and
@@ -155,7 +155,7 @@ An automated sweep was executed using Dirb paired with a common directory wordli
 
 -   **The Analogy:** Entering a public building and systematically testing every single unmarked door,
     back staircase and service corridor to find restricted staff areas that the building operators forgot to lock.
--   **What we found:** Dirb successfully exposed a hidden diagnostic: `/health`
+-   **What I found:** Dirb successfully exposed a hidden diagnostic: `/health`
 -   **The Consequence:**  By bypassing the public areas of the website, they can slip into internal utility corridors
     where they can scrape diagnostic metrics and gather information to plan a deeper attack.
 
@@ -368,7 +368,7 @@ vulnerabilities that follow one after the other.
 
 By engineering this project from a fragile baseline to a fully automated pipeline, I navigated the engineering realities
 that theory does not teach. I experienced exactly what difficulties engineers face when designing static safeguards
-(even when future features are planned out), how firewall realities could be bypassed from choosing a poor vantage
+(even when future features are planned out), how firewall realities could be bypassed by choosing a poor vantage
 point for testing and how baseline scanners can fill a pipeline with irrelevant warnings.
 
 Foundational knowledge provides the blueprint but building reveals the cracks. Moving this project from a fragile
