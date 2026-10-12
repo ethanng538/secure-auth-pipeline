@@ -46,8 +46,8 @@
 
 ## 🛠️ System & Network Architecture
 
-To support its authentication workflow, my application is entirely containerised and split into isolated
-virtual routing zones. This design enforces strict network segmentation and maintains the principle of least privilege:
+To support its authentication workflow, my application is entirely containerised and uses network segmentation to
+maintain the principle of least privilege:
 
 ```text
        [ frontend-ui ]                 [ backend-api ]                  [ postgres-db ]
