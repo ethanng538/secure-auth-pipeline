@@ -38,8 +38,13 @@ future updates or feature branches are automatically checked for structural risk
 Upon pushing the initial baseline code, the pipeline halted execution, reporting
 **4 blocking findings** across the authentication routes.
 
-![Semgrep pipeline results](images/semgrep-results.png)
+<details>
+<summary><b>Click to expand SAST results</b></summary>
 
+![Semgrep pipeline results](images/semgrep-results.png)
+</details>
+
+#### Summary
 ```text
 ┌─────────────────┐
 │ 4 Code Findings │
@@ -242,7 +247,11 @@ OWASP ZAP Automation Framework into the pipeline. While my custom sweeps focused
 infrastructure port isolation and traffic limits, ZAP complements my pipeline by verifying the application enforces the
 safety settings needed to protect users from browser-based attacks.
 
+<details>
+<summary><b>Click to expand initial ZAP findings</b></summary>
+
 ![ZAP results](images/zap-results.png)
+</details>
 
 Instead of blindly chasing every alert thrown by the automated scanner, I mapped the tool's findings directly against
 the active boundaries of my system. By researching the specific vulnerability documentation behind each alert, I
@@ -274,7 +283,11 @@ Nginx configuration file. Enforcing these directives through the Nginx reverse p
 the client browser is strictly mandated to block UI-overlay hijacking, stop running files that don't match their
 declared format and block unapproved scripts from execution.
 
+<details>
+<summary><b>Click to expand ZAP findings post-remediation</b></summary>
+
 ![ZAP results after patches](images/zap-results-post-patch.png)
+</details>
 
 ### Infrastructure Remediation
 #### Reducing the Attack Surface
